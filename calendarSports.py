@@ -1,10 +1,9 @@
-import urllib.request
 import time
 import pandas as pd
 import imgkit
 import datetime
 import os
-from bs4 import BeautifulSoup
+from common import request_text_soup
 
 # чемпионаты, которые мы хотим обработать
 targetChamps = ['Беларусь']
@@ -73,13 +72,11 @@ startTime = time.time()
 
 for currentChamp in targetChamps:
     startChampTime = time.time()
-    print("Collecting " + currentChamp + '...')
+    print('Обработка чемпионата "' + currentChamp + '"...')
     currentChampLink = champSportsLinks[currentChamp]
     currentTableLink = currentChampLink + 'table/'
     # получаем страницу с таблицей обрабатываемого чемпионата
-    tableSportsRequest = urllib.request.Request(currentTableLink)
-    tableSportsText = urllib.request.urlopen(tableSportsRequest).read().decode('utf-8')
-    tableSportsSoup = BeautifulSoup(tableSportsText, 'html.parser')
+    _, tableSportsSoup = request_text_soup(currentTableLink)
     # выделение таблицы со страницы
     tableBody = tableSportsSoup.tbody
     teamBodyList = tableBody.find_all('tr')
@@ -110,9 +107,7 @@ for currentChamp in targetChamps:
         ''' (в теории можно обрабатывать через календарь соревнования)
         (НО - на спортс в таком случае не обязательна сортировка по дате 
         - используется сортировка по ФОРМАЛЬНОМУ туру)'''
-        calendarTeamSportsRequest = urllib.request.Request(teamLink)
-        calendarTeamSportsText = urllib.request.urlopen(calendarTeamSportsRequest).read().decode('utf-8')
-        calendarTeamSportsSoup = BeautifulSoup(calendarTeamSportsText, 'html.parser')
+        _,  calendarTeamSportsSoup = request_text_soup(teamLink)
         # выцепление самой таблицы с календарем матчей
         calendarTeamSportsBody = calendarTeamSportsSoup.find('tbody')
         # получение списка матчей
@@ -154,13 +149,13 @@ for currentChamp in targetChamps:
     config = imgkit.config(wkhtmltoimage=path_wkthmltoimage)
     options = {'encoding': "UTF-8"}
     # создание директории при отсутствии оной
-    directory = ("../pics/" + str(datetime.datetime.now().date()) + "/calendars/")
+    directory = ("pics/" + str(datetime.datetime.now().date()) + "/calendars/")
     if not os.path.isdir(directory):
         os.makedirs(directory)
     imgkit.from_string(html, directory + currentChamp + ".png", config=config, options=options)
 
     # логгирование времени обработки каждого чемпионата
-    print(currentChamp + " обработан, время обработки: " + str(round(time.time() - startChampTime, 3)) + "s")
+    print('"' + currentChamp + '" обработан, время обработки: ' + str(round(time.time() - startChampTime, 3)) + "s")
 
 # логгирование времени всех запрошенных чемпионатов
-print("Календари собраны, время обработки: " + str(round(time.time() - startTime, 3)) + "s")
+print('Календари собраны, время обработки: ' + str(round(time.time() - startTime, 3)) + "s")
