@@ -4,9 +4,9 @@ import imgkit
 import datetime
 import os
 from common import request_text_soup
-
-# чемпионаты, которые мы хотим обработать
-targetChamps = ['Беларусь']
+# захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
+typoMap = {'Маритиму': 'Маритиму Мадейра',
+           'Санта-Клара': 'Санта Клара'}
 
 
 # функция для вычисления сложности календаря
@@ -14,10 +14,8 @@ def difficulty_avg(t1, t2, side_match):
     # поправка на место проведения игры - высчитана средняя в среднем для крупных европейских чемпионатов
     side_eff = 0.4 * ((side_match == '(д)') - (side_match == '(г)'))
     # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
-    if t2 == 'Маритиму':
-        t2 = 'Маритиму Мадейра'
-    if t2 == 'Санта-Клара':
-        t2 = 'Санта Клара'
+    if typoMap.get(t2):
+        t2 = typoMap[t2]
     # tableDict - глобальный, для доступа к переменной из основной функции обработки
     try:
         diff = (tableDict['avg_g_scored'][t1] - tableDict['avg_g_against'][t1]) - (
@@ -25,7 +23,8 @@ def difficulty_avg(t1, t2, side_match):
         diff = side_eff + round(diff, 2)
         return diff
     except KeyError:
-        print("Error with match ", t1, " - ", t2, ": unknown club")
+        # если нашлась новая проблема с разными названиями в разных местах на спортс ру
+        print("ERROR: Unknown club, match ", t1, " - ", t2)
         return 0
 
 
