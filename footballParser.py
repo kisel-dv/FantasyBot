@@ -1,9 +1,9 @@
 """
-Единая точка входа - отсюда для каждого чемпионата вызываются marathonProcessing и calendarProcessing функции
+Единая точка входа - отсюда для каждого чемпионата вызываются marathon_processing и calendar_processing функции
 """
 import marathon
 import calendarSports
-from common import rusdate_convert, request_text_soup, champLinks
+from common import rus_date_convert, request_text_soup, champLinks
 import time
 import re
 from datetime import date
@@ -22,7 +22,7 @@ for currentChamp, currentChampLinks in champLinks.items():
     sportsFantasyText, sportsFantasySoup = request_text_soup(currentChampLinks['sportsFantasy'])
     # вычисление даты дедлайна - пока что время дедлайна не используется
     deadline = re.findall(r'Дедлайн</th>\n<td>([^<]*)[^\d]*(\d{2}:\d{2})', sportsFantasyText)[0]
-    deadlineDate = rusdate_convert(deadline[0])
+    deadlineDate = rus_date_convert(deadline[0])
     if currentChamp == 'Беларусь':
         deadlineDate = date.today()
     # если дедлайн в прошлом или более чем через 5 дней, мы пропускаем обработку чемпионата

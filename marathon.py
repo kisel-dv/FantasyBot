@@ -5,7 +5,7 @@ import seaborn as sns
 import imgkit
 import os
 from datetime import datetime
-from common import rusdate_convert, request_text_soup
+from common import rus_date_convert, request_text_soup
 
 # выделение ссылок для каждого матча из доступной линии
 prefixMarathon = "https://www.marathonbet.ru/su/betting/"
@@ -18,26 +18,26 @@ multiplierMarathon = 1/(1 + margeMarathon)
 # функция для подсчета вероятности клиншитов и матожиданий забитых голов
 def score_cleansheet_expected(team, match_soup):
     # коэффициенты по событиям типа "первая/вторая команда забьет больше x.5 голов"
-    goals_over_coeffs = match_soup.find_all('span', attrs={'data-prt': 'CP', 'data-selection-key': re.compile(
+    goals_over_prices = match_soup.find_all('span', attrs={'data-prt': 'CP', 'data-selection-key': re.compile(
         r'\d*@Total_Goals_\(' + team + r'_Team\)\d?\.Over_\d\.5')})
     # обработка
     score = 0
     addition = 0
-    for coeff in goals_over_coeffs:
-        goals = coeff.get('data-selection-key')[-3:]
+    for goal_price in goals_over_prices:
+        goals = goal_price.get('data-selection-key')[-3:]
         if goals != '1.5' and score == 0:
             score += float(goals) - 1.5
-        addition = multiplierMarathon / float(coeff.text)
+        addition = multiplierMarathon / float(goal_price.text)
         score += addition
     # коэффициенты по событиям типа "первая/вторая команда забьет/не забьет"
-    cs_coeffs = match_soup.find_all('span', attrs={'data-prt': 'CP', 'data-selection-key': re.compile(
+    cs_prices = match_soup.find_all('span', attrs={'data-prt': 'CP', 'data-selection-key': re.compile(
         r'\d*@' + team + r'_Team_To_Score\.(yes|no)')})
     cs = 0.01
     addition_0 = 1  # больше 0.5 голов
     # обработка
-    for coeff in cs_coeffs:
-        outcome = coeff.get('data-selection-key')[-2:]
-        c = multiplierMarathon / float(coeff.text)
+    for cs_price in cs_prices:
+        outcome = cs_price.get('data-selection-key')[-2:]
+        c = multiplierMarathon / float(cs_price.text)
         if outcome == 'no':
             cs = c
         else:
@@ -58,7 +58,7 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     for elem in marathon_soup.find_all('div', class_='bg coupon-row'):
         # проверка даты матча
         match_date_text = elem.find('td', class_='date').text.strip()
-        match_date = rusdate_convert(match_date_text)
+        match_date = rus_date_convert(match_date_text)
         # обрабатываем только те матчи, которые проходят не раньше дня дедлайна по чемпионату
         if match_date >= deadline_date:
             home_team, guest_team = elem.get('data-event-name').split(' - ')
