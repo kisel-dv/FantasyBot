@@ -52,9 +52,9 @@ champLinks = {
                     'https://www.sports.ru/fantasy/football/team/2206981.html',
                     '')
 }
-# преобразование в словарей словарей
+# преобразование в словарь словарей
 for key in champLinks:
-    k = ('marathonLink', 'sportsFantasyLink', 'sportsLink')
+    k = ('marathon', 'sportsFantasy', 'sports')
     champLinks[key] = dict(zip(k, champLinks[key]))
 
 
@@ -86,7 +86,7 @@ def rusdate_convert(d, t=''):
         return date.today()
 
 
-# функция для обработки каждой страницы
+# функция для обработки каждой страницы, возвращает пару (текст страницы, soup объект)
 def request_text_soup(link):
     req = urllib.request.Request(link)
     text = urllib.request.urlopen(req).read().decode('utf-8')
