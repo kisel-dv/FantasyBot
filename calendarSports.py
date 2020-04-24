@@ -4,24 +4,10 @@ import imgkit
 import datetime
 import os
 from common import request_text_soup
+from common import champLinks
 
 # чемпионаты, которые мы хотим обработать
 targetChamps = ['Беларусь']
-
-# маппинг чемпионат -> ссылка на таблицу
-champSportsLinks = {
-    'Беларусь': 'https://www.sports.ru/premier-league-belarus/',
-    'Англия': 'https://www.sports.ru/epl/',
-    'Испания': 'https://www.sports.ru/la-liga/',
-    'Россия': 'https://www.sports.ru/rfpl/',
-    'Италия': 'https://www.sports.ru/seria-a/',
-    'Германия': 'https://www.sports.ru/bundesliga/',
-    'Франция': 'https://www.sports.ru/ligue-1/',
-    'Нидерланды': 'https://www.sports.ru/eredivisie/',
-    'Португалия': 'https://www.sports.ru/liga-zon-sagres/',
-    'Чемпионшип': 'https://www.sports.ru/championship/',
-    'Турция': 'https://www.sports.ru/super-lig/'
-}
 
 
 # функция для вычисления сложности календаря
@@ -73,7 +59,7 @@ startTime = time.time()
 for currentChamp in targetChamps:
     startChampTime = time.time()
     print('Обработка чемпионата "' + currentChamp + '"...')
-    currentChampLink = champSportsLinks[currentChamp]
+    currentChampLink = champLinks[currentChamp]['sportsLink']
     currentTableLink = currentChampLink + 'table/'
     # получаем страницу с таблицей обрабатываемого чемпионата
     _, tableSportsSoup = request_text_soup(currentTableLink)

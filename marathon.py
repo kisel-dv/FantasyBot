@@ -5,19 +5,10 @@ import seaborn as sns
 import imgkit
 import os
 from datetime import datetime, date
-from common import rusdate_convert, request_text_soup
+from common import rusdate_convert, request_text_soup, champLinks
 
 # выделение ссылок для каждого матча из доступной линии
 prefixMarathon = "https://www.marathonbet.ru/su/betting/"
-''' словарь со строением вида:
-название чемпионата ->
-(ссылка на раздел на марафоне) - отсюда для каждого 
-(ссылка на команду на спортсе)
-(offset, если в линии еще есть матчи прошлого тура) '''
-champMarathonLinks = {
-    "Беларусь": {'marathonLink': "https://www.marathonbet.ru/su/betting/Football/Belarus/Vysshaya+League",
-                 'sportsLink': 'https://by.tribuna.com/fantasy/football/team/points/2213674.html'}
-}
 
 # задание констант, описывающих маржу букмекера - для конвертации коэффициентов в вероятность
 margeMarathon = 0.05
@@ -59,17 +50,17 @@ def score_cleansheet_expected(team, match_soup):
 # логирование информации о времени обработки
 startTime = time.time()
 
-for currentChamp, currentChampInfo in champMarathonLinks.items():
+for currentChamp, currentChampInfo in champLinks.items():
     # фиксирование времени по каждому чемпионату, логирование обработки каждого чемпионата
     champStartTime = time.time()
     print('Обработка чемпионата "' + currentChamp + '"...')
     # запрос страницы чьей-то фентези команды на спортс ру
-    sportsFantasyText, sportsFantasySoup = request_text_soup(currentChampInfo['sportsLink'])
+    sportsFantasyText, sportsFantasySoup = request_text_soup(currentChampInfo['sportsFantasyLink'])
     # вычисление даты дедлайна - пока что время дедлайна не используется
     deadline = re.findall(r'Дедлайн</th>\n<td>([^<]*)[^\d]*(\d{2}:\d{2})', sportsFantasyText)[0]
     deadlineDate = rusdate_convert(deadline[0])
-    if (date.today() - deadlineDate).days > 5:
-        print('До дедлайна чемпионата"' + currentChamp + '" больше 5 дней, чемпионат пропускается...')
+    if -1 < (deadlineDate - date.today()).days > 5:
+        print('До дедлайна больше 5 дней, чемпионат пропускается...')
     else:
         # запрос страницы с матчами по текущему чемпионату
         _, marathonSoup = request_text_soup(currentChampInfo['marathonLink'])
@@ -128,6 +119,7 @@ for currentChamp, currentChampInfo in champMarathonLinks.items():
 
     # логирование информации о скорости обработки каждого турнира
     print('"' + currentChamp + '" обработан, время обработки: ' + str(round(time.time() - champStartTime, 3)) + "s")
+    print('_' * 90)
 
 # логирование информации о полном времени
 print('Тур обработан, время обработки: ' + str(round(time.time() - startTime, 3)) + "s")
