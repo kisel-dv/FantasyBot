@@ -4,6 +4,10 @@
 import urllib.request
 from bs4 import BeautifulSoup
 from datetime import date
+import imgkit
+import os
+
+path_wk_html_to_image = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
 
 '''
 словарь со строением вида:
@@ -91,3 +95,12 @@ def request_text_soup(link):
     req = urllib.request.Request(link)
     text = urllib.request.urlopen(req).read().decode('utf-8')
     return text, BeautifulSoup(text, 'html.parser')
+
+
+# функция для сохранения картинок
+def save_pic(s, directory, name, options):
+    html = s.render()
+    config = imgkit.config(wkhtmltoimage=path_wk_html_to_image)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    imgkit.from_string(html, directory + name + ".png", config=config, options=options)

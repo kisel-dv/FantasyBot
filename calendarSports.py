@@ -1,12 +1,16 @@
 import time
 import pandas as pd
-import imgkit
 import datetime
-import os
-from common import request_text_soup
+from common import request_text_soup, save_pic
+
 # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
 typoMap = {'Маритиму': 'Маритиму Мадейра',
            'Санта-Клара': 'Санта Клара'}
+# сокращение "В гостях" или "Дома" до простых "(д)" и "(г)"
+sideMap = {'В гостях': '(г)',
+           'Дома': '(д)'}
+# объявлен глобально, чтобы быть доступным в функции стайлинга таблицы
+tableDict = {}
 
 
 # функция для вычисления сложности календаря
@@ -24,7 +28,7 @@ def difficulty_avg(t1, t2, side_match):
         return diff
     except KeyError:
         # если нашлась новая проблема с разными названиями в разных местах на спортс ру
-        print("ERROR: Unknown club, match ", t1, " - ", t2)
+        print('ERROR: Unknown club, match {} - {}'.format(t1, t2))
         return 0
 
 
@@ -32,10 +36,13 @@ def difficulty_avg(t1, t2, side_match):
 def highlight_cells(value):
     par = []
     for i, op in enumerate(value):
-        side_match = op[-3:]
-        # первые 10 символов - дата в формете dd.mm.yyyy, последние 3 - сторона в формате (д)/(г)
-        op = op[10:-3].strip()
-        diff = difficulty_avg(value.index[i], op, side_match)
+        if op == '':
+            diff = 0
+        else:
+            side_match = op[-3:]
+            # первые 10 символов - дата в формете dd.mm.yyyy, последние 3 - сторона в формате (д)/(г)
+            op = op[10:-3].strip()
+            diff = difficulty_avg(value.index[i], op, side_match)
         if diff < -0.8:
             par.append('background-color: #CC0000')
         elif (diff >= -0.8) and (diff <= -0.3):
@@ -49,15 +56,14 @@ def highlight_cells(value):
     return par
 
 
-# сокращение "В гостях" или "Дома" до простых "(д)" и "(г)"
-def side_map(side):
-    return '(' + side.split(' ')[-1][0].lower() + ')'
+# безопасное взятие первых n матчей
+def get_first_matches(matches, n):
+    m = len(matches)
+    # добавит пустые строчки, если количество оставшихся в календаре матчей меньше n
+    return [matches[x][0] for x in range(m)] + [''] * (n - m)
 
 
-# объявлен глобально, чтобы быть доступным в функции стайлинга таблицы
-tableDict = {}
-
-
+# основная функция обработки в этом модуле
 def calendar_processing(current_champ, current_champ_links):
     # логирование информации о времени обработки каждого чемпионата
     champ_start_time = time.time()
@@ -72,7 +78,7 @@ def calendar_processing(current_champ, current_champ_links):
     table_body = table_soup.tbody
     team_body_list = table_body.find_all('tr')
     # колонки футбольных таблиц на sports.ru - численные атрибуты каждой команды
-    table_columns = ["games", "won", "draw", "lost", "g_scored", "g_against", "points"]
+    table_columns = ['games', 'won', 'draw', 'lost', 'g_scored', 'g_against', 'points']
     team_links = {}
     # работаем с глобальным словарем tableDict
     global tableDict
@@ -85,8 +91,8 @@ def calendar_processing(current_champ, current_champ_links):
         for j, n in enumerate(team_numbers):
             team_numbers[j] = int(n.text)
         tableDict[team_name] = dict(zip(table_columns, team_numbers))
-        tableDict[team_name]['avg_g_scored'] = tableDict[team_name]["g_scored"] / tableDict[team_name]["games"]
-        tableDict[team_name]['avg_g_against'] = tableDict[team_name]["g_against"] / tableDict[team_name]["games"]
+        tableDict[team_name]['avg_g_scored'] = tableDict[team_name]['g_scored'] / tableDict[team_name]['games']
+        tableDict[team_name]['avg_g_against'] = tableDict[team_name]['g_against'] / tableDict[team_name]['games']
     # транспонируем этот словарь, чтобы иметь доступ в другом порядке
     # (вместо team_name -> games -> 5 получаем games -> team_name -> 5)
     tableDict = dict(pd.DataFrame(tableDict).transpose())
@@ -116,7 +122,7 @@ def calendar_processing(current_champ, current_champ_links):
                 date.append(match.find('a').text.split('|')[0].strip())
                 competition.append(match.div.a.get('href'))
                 opponent.append(match.find_all('div')[1].text.strip())
-                side.append(side_map(match.find('td', class_="alRight padR20").text))
+                side.append(sideMap[match.find('td', class_='alRight padR20').text])
                 result.append(match.find('a', class_='score').text.strip())
 
         # формирование календаря в формате лист в листе
@@ -129,22 +135,16 @@ def calendar_processing(current_champ, current_champ_links):
         # чемпионат, который соответствует обрабатываемой игре
         future_team_calendar_champ = list(filter(lambda x: current_champ_link in x[1], future_team_calendar))
         # взятие ближайших 5 игр для каждой команды
-        champ_calendar_dict[team] = dict(zip(['1', '2', '3', '4', '5'],
-                                               [future_team_calendar_champ[x][0] for x in range(5)]))
+        champ_calendar_dict[team] = dict(
+            zip(['1', '2', '3', '4', '5'], get_first_matches(future_team_calendar_champ, 5)))
     # транспонирование таблицы
     champ_calendar = pd.DataFrame(champ_calendar_dict).transpose()
     # оформление и сохранение
     champ_calendar_style = champ_calendar.style.apply(highlight_cells)
-    html = champ_calendar_style.render()
-    path_wkthmltoimage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
-    config = imgkit.config(wkhtmltoimage=path_wkthmltoimage)
+    directory = ('pics/{}/calendars/'.format(datetime.datetime.now().date()))
     options = {'encoding': "UTF-8"}
-    # создание директории при отсутствии оной
-    directory = ("pics/" + str(datetime.datetime.now().date()) + "/calendars/")
-    if not os.path.isdir(directory):
-        os.makedirs(directory)
-    imgkit.from_string(html, directory + current_champ + ".png", config=config, options=options)
+    save_pic(champ_calendar_style, directory, current_champ, options)
 
     # логирование времени обработки каждого чемпионата
-    print('Календарь чемпионата "' + current_champ + '" обработан, время обработки: '
-          + str(round(time.time() - champ_start_time, 3)) + "s")
+    print('Календарь чемпионата "{}" обработан, время обработки: {}s'.format(current_champ,
+                                                                             round(time.time() - champ_start_time, 3)))

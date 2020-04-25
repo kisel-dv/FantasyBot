@@ -2,13 +2,11 @@ import re
 import time
 import pandas as pd
 import seaborn as sns
-import imgkit
-import os
 from datetime import datetime
-from common import rus_date_convert, request_text_soup
+from common import rus_date_convert, request_text_soup, save_pic
 
 # выделение ссылок для каждого матча из доступной линии
-prefixMarathon = "https://www.marathonbet.ru/su/betting/"
+prefixMarathon = 'https://www.marathonbet.ru/su/betting/'
 
 # задание констант, описывающих маржу букмекера - для конвертации коэффициентов в вероятность
 margeMarathon = 0.05
@@ -90,19 +88,10 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
         {'cleansheet': '{:,.2f}',
          'goals': '{:,.1f}'})
     # сохранение style объекта картинкой на диск
-    html = s.render()
-    path_wkthmltoimage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
-    # странная ошибка в строке снизу
-    config = imgkit.config(wkhtmltoimage=path_wkthmltoimage)
-    options = {'encoding': "UTF-8", 'width': "350", 'height': str(26 * (df.shape[0] + 2))}
-    # создание директории с текущей датой в случае отсутствия оной
     directory = ("pics/" + str(datetime.now().date()) + "/")
-    if not os.path.isdir(directory):
-        os.makedirs(directory)
-    filename = directory + current_champ
-    # сохранение таблички и картинки по каждому чемпионату
-    imgkit.from_string(html, filename + ".png", config=config, options=options)
+    options = {'encoding': "UTF-8", 'width': "350", 'height': str(26 * (df.shape[0] + 2))}
+    save_pic(s, directory, current_champ, options)
 
     # логирование информации о скорости обработки каждого турнира
-    print('Линия букмекера для "' + current_champ + '" обработана, время обработки: ' +
-          str(round(time.time() - champ_start_time, 3)) + "s")
+    print('Линия букмекера для "{}" обработана, время обработки: {}s'.format(current_champ,
+                                                                             round(time.time() - champ_start_time, 3)))
