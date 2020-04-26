@@ -7,6 +7,10 @@ from common import rus_date_convert, request_text_soup, champLinks
 import time
 import re
 from datetime import date
+import logging
+
+logging.basicConfig(filename='log/{}.log'.format(date.today()), level=logging.INFO,
+                    format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d]# %(levelname)-8s  %(message)s')
 
 daysBeforeDeadlineLimit = 5
 
@@ -17,7 +21,7 @@ for currentChamp, currentChampLinks in champLinks.items():
     # фиксирование времени по каждому чемпионату
     champStartTime = time.time()
     # логирование обработки каждого чемпионата
-    print('Обработка чемпионата "{}"...'.format(currentChamp))
+    logging.info('Обработка чемпионата "{}"...'.format(currentChamp))
     # запрос страницы фентези команды на спортс ру
     sportsFantasyText, sportsFantasySoup = request_text_soup(currentChampLinks['sportsFantasy'])
     # вычисление даты дедлайна - пока что время дедлайна не используется
@@ -28,7 +32,7 @@ for currentChamp, currentChampLinks in champLinks.items():
         deadlineDate = date.today()
     # если дедлайн в прошлом или более чем через 5 дней, мы пропускаем обработку чемпионата
     if -1 < (deadlineDate - date.today()).days > daysBeforeDeadlineLimit:
-        print('До дедлайна больше 5 дней, чемпионат пропускается...')
+        logging.info('До дедлайна больше 5 дней, чемпионат пропускается...')
     else:
         # вычисление количества матчей в туре с помощью страницы фентези команды на спортс ру
         matchTable = sportsFantasySoup.find('table', class_='stat-table with-places')
@@ -39,8 +43,10 @@ for currentChamp, currentChampLinks in champLinks.items():
             calendarSports.calendar_processing(currentChamp, currentChampLinks)
 
     # логирование информации о скорости обработки каждого турнира
-    print('Чемпионат "{}" обработан, время обработки: {}s'.format(currentChamp, round(time.time() - champStartTime, 3)))
-    print('_' * 90)
+    logging.info(
+        'Чемпионат "{}" обработан, время обработки: {}s'.format(currentChamp, round(time.time() - champStartTime, 3)))
+    logging.info('-' * 90)
 
 # логирование информации о полном времени
-print('Тур обработан, время обработки: {}s'.format(round(time.time() - startTime, 3)))
+logging.info('Тур обработан, время обработки: {}s'.format(round(time.time() - startTime, 3)))
+logging.info('_' * 90)

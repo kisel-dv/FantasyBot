@@ -5,9 +5,11 @@ import urllib.request
 from bs4 import BeautifulSoup
 from datetime import date
 import imgkit
+import logging
 import os
 
 path_wk_html_to_image = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
+imgkitConfig = imgkit.config(wkhtmltoimage=path_wk_html_to_image)
 
 '''
 словарь со строением вида:
@@ -85,8 +87,7 @@ def rus_date_convert(d, t=''):
         res = date(year, month, day)
         return res
     except ValueError:
-        # в будущем добавить запись ошибки в лог
-        print('ERROR - Некорректный формат даты: ' + d)
+        logging.error('Некорректный формат даты: {}'.format(d))
         return date.today()
 
 
@@ -100,7 +101,6 @@ def request_text_soup(link):
 # функция для сохранения картинок
 def save_pic(s, directory, name, options):
     html = s.render()
-    config = imgkit.config(wkhtmltoimage=path_wk_html_to_image)
     if not os.path.isdir(directory):
         os.makedirs(directory)
-    imgkit.from_string(html, directory + name + ".png", config=config, options=options)
+    imgkit.from_string(html, directory + name + ".png", config=imgkitConfig, options=options)

@@ -2,6 +2,7 @@ import re
 import time
 import pandas as pd
 import seaborn as sns
+import logging
 from datetime import datetime
 from common import rus_date_convert, request_text_soup, save_pic
 
@@ -93,5 +94,5 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     save_pic(s, directory, current_champ, options)
 
     # логирование информации о скорости обработки каждого турнира
-    print('Линия букмекера для "{}" обработана, время обработки: {}s'.format(current_champ,
-                                                                             round(time.time() - champ_start_time, 3)))
+    logging.info('Линия букмекера для "{}" обработана, время обработки: {}s'.format(current_champ, round(
+        time.time() - champ_start_time, 3)))

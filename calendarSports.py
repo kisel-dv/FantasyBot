@@ -1,6 +1,7 @@
 import time
 import pandas as pd
-import datetime
+import logging
+from datetime import datetime
 from common import request_text_soup, save_pic
 
 # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
@@ -28,7 +29,7 @@ def difficulty_avg(t1, t2, side_match):
         return diff
     except KeyError:
         # если нашлась новая проблема с разными названиями в разных местах на спортс ру
-        print('ERROR: Unknown club, match {} - {}'.format(t1, t2))
+        logging.error('Unknown club, match {} - {}'.format(t1, t2))
         return 0
 
 
@@ -60,7 +61,7 @@ def highlight_cells(value):
 def get_first_matches(matches, n):
     m = len(matches)
     # добавит пустые строчки, если количество оставшихся в календаре матчей меньше n
-    return [matches[x][0] for x in range(m)] + [''] * (n - m)
+    return [matches[x][0] for x in range(m)] + ['' for _ in range(n - m)]
 
 
 # основная функция обработки в этом модуле
@@ -69,7 +70,7 @@ def calendar_processing(current_champ, current_champ_links):
     champ_start_time = time.time()
     current_champ_link = current_champ_links['sports']
     if not current_champ_link:
-        print('Для данного чемпионата календарь недоступен, обработка календаря пропускается...')
+        logging.warning('Для данного чемпионата календарь недоступен, обработка календаря пропускается...')
         return
     current_table_link = current_champ_link + 'table/'
     # получаем страницу с таблицей обрабатываемого чемпионата
@@ -141,10 +142,10 @@ def calendar_processing(current_champ, current_champ_links):
     champ_calendar = pd.DataFrame(champ_calendar_dict).transpose()
     # оформление и сохранение
     champ_calendar_style = champ_calendar.style.apply(highlight_cells)
-    directory = ('pics/{}/calendars/'.format(datetime.datetime.now().date()))
+    directory = ('pics/{}/calendars/'.format(datetime.now().date()))
     options = {'encoding': "UTF-8"}
     save_pic(champ_calendar_style, directory, current_champ, options)
 
     # логирование времени обработки каждого чемпионата
-    print('Календарь чемпионата "{}" обработан, время обработки: {}s'.format(current_champ,
-                                                                             round(time.time() - champ_start_time, 3)))
+    logging.info('Календарь чемпионата "{}" обработан, время обработки: {}s'.format(current_champ, round(
+        time.time() - champ_start_time, 3)))
