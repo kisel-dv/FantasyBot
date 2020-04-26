@@ -3,7 +3,8 @@
 """
 import marathon
 import calendarSports
-from common import rus_date_convert, request_text_soup, champLinks
+from common import rus_date_convert, request_text_soup
+from configFootballLinks import champLinks
 import time
 import re
 from datetime import date
@@ -16,6 +17,7 @@ daysBeforeDeadlineLimit = 5
 
 # логирование информации о времени обработки
 startTime = time.time()
+logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
 
 for currentChamp, currentChampLinks in champLinks.items():
     # фиксирование времени по каждому чемпионату
