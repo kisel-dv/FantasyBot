@@ -12,7 +12,7 @@ import logging
 import fantasyBot
 
 logging.basicConfig(filename='log/{}.log'.format(date.today()), level=logging.INFO,
-                    format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d]# %(levelname)-8s  %(message)s')
+                    format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
 
 daysBeforeDeadlineLimit = 5
 
