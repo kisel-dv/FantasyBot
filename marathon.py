@@ -91,8 +91,9 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     # сохранение style объекта картинкой на диск
     directory = ("pics/" + str(datetime.now().date()) + "/")
     options = {'encoding': "UTF-8", 'width': "350", 'height': str(26 * (df.shape[0] + 2))}
-    save_pic(s, directory, current_champ, options)
+    path = save_pic(s, directory, current_champ, options)
 
     # логирование информации о скорости обработки каждого турнира
     logging.info('Линия букмекера для "{}" обработана, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
+    return path

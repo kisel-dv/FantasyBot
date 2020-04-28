@@ -144,8 +144,9 @@ def calendar_processing(current_champ, current_champ_links):
     champ_calendar_style = champ_calendar.style.apply(highlight_cells)
     directory = ('pics/{}/calendars/'.format(datetime.now().date()))
     options = {'encoding': "UTF-8"}
-    save_pic(champ_calendar_style, directory, current_champ, options)
+    path = save_pic(champ_calendar_style, directory, current_champ, options)
 
     # логирование времени обработки каждого чемпионата
     logging.info('Календарь чемпионата "{}" обработан, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
+    return path
