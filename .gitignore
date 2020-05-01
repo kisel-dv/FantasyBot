@@ -4,4 +4,5 @@ venv/
 pics/
 __pycache__/
 log/
-configBot.py
+creds/
+config.py

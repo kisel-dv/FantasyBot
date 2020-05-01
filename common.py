@@ -8,6 +8,7 @@ from configFootballLinks import CHAMP_LINKS
 import imgkit
 import logging
 import os
+import re
 
 # дикта, используемая для конвертации даты
 MONTHS = {'дек': 12, 'янв': 1, 'фев': 2,
@@ -54,15 +55,57 @@ def request_text_soup(link):
     return text, BeautifulSoup(text, 'html.parser')
 
 
+# функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
+# на выходе получаем представление даты дедлайна в двух видах: текстовом и datetime + количество матчей в туре
+def get_champ_meta(link):
+    if not link:
+        return '', date(2000, 1, 1), -1
+    # запрос страницы фентези команды на спортс ру
+    sports_fantasy_text, sports_fantasy_soup = request_text_soup(link)
+    # вычисление даты дедлайна - пока что время дедлайна не используется
+    # на спортс дата дедлайна в виде "15 Апр 18:00"
+    deadline = re.findall(r'Дедлайн</th>\n<td>([^<]*)[^\d]*(\d{2}:\d{2})', sports_fantasy_text)[0]
+    deadline_text = ' '.join(deadline)
+    # конвертируем в datetime часть даты вида "15 Апр"
+    deadline_date = rus_date_convert(deadline[0])
+    # вычисление количества матчей в туре с помощью страницы фентези команды на спортс ру
+    match_table = sports_fantasy_soup.find('table', class_='stat-table with-places')
+    # в некоторых случаях данной таблицы вообще не будет на странице, например, когда дата следующего тура неясна
+    match_num = len(match_table.find_all('tr')) - 1 if match_table else 0
+    return deadline_text, deadline_date, match_num
+
+
 pathWkHtmlToImage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
 imgkitConfig = imgkit.config(wkhtmltoimage=pathWkHtmlToImage)
 
 
 # функция для сохранения картинок
-def save_pic(s, directory, name, options):
+def save_pic(s, directory, name, flag):
+    if s is None:
+        return None
+    options = {'encoding': "UTF-8"}
+    if flag == 'marathon':
+        # дополнительные настройки для сохранения картинкой
+        options.update({'width': "350", 'height': str(26 * (s.data.shape[0] + 2))})
     html = s.render()
     if not os.path.isdir(directory):
         os.makedirs(directory)
     path = directory + name + ".png"
     imgkit.from_string(html, path, config=imgkitConfig, options=options)
+    logging.info('{}: картинка сохранена'.format(name))
     return path
+
+
+# функция для сохранения стилизированных данных в формате таблиц
+def save_stats_excel(writer, champ, marathon, calendar):
+    workbook = writer.book
+    writer.sheets[champ] = workbook.create_sheet(champ)
+    # настройка ширины столбцов (первых 6, потому что используются только они)
+    for col in 'ABCDEF':
+        writer.sheets[champ].column_dimensions[col].width = 30
+    # записываем матожидания
+    marathon.to_excel(writer, sheet_name=champ, startrow=0, startcol=0)
+    # с отступом в 5 строк записываем календарь
+    calendar.to_excel(writer, sheet_name=champ, startrow=marathon.data.shape[0] + 5, startcol=0)
+    logging.info('{}: информация в excel обновлена'.format(champ))
+    return

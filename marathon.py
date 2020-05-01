@@ -3,8 +3,7 @@ import time
 import pandas as pd
 import seaborn as sns
 import logging
-from datetime import datetime
-from common import rus_date_convert, request_text_soup, save_pic
+from common import rus_date_convert, request_text_soup
 
 # выделение ссылок для каждого матча из доступной линии
 prefixMarathon = 'https://www.marathonbet.ru/su/betting/'
@@ -82,18 +81,16 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     # суммирование покомандно - для ситуаций, где у какой-либо команды в одном туре будет несколько матчей
     df = df.groupby(df['team']).sum()
     df = df.sort_values(by=['goals', 'cleansheet'], ascending=[0, 0])
+    # округление чисел для облегчения визуального восприятия
+    df.goals = df.goals.round(2)
+    df.cleansheet = df.cleansheet.round(1)
     # установка стиля (раскраска)
     cm = sns.diverging_palette(25, 130, as_cmap=True)
     s = df.style.background_gradient(cmap=cm).set_properties(subset=['cleansheet', 'goals'],
                                                              **{'width': '40px', 'text-align': 'center'}).format(
         {'cleansheet': '{:,.2f}',
          'goals': '{:,.1f}'})
-    # сохранение style объекта картинкой на диск
-    directory = ("pics/" + str(datetime.now().date()) + "/")
-    options = {'encoding': "UTF-8", 'width': "350", 'height': str(26 * (df.shape[0] + 2))}
-    path = save_pic(s, directory, current_champ, options)
-
     # логирование информации о скорости обработки каждого турнира
     logging.info('Линия букмекера для "{}" обработана, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
-    return path
+    return s

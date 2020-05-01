@@ -1,8 +1,7 @@
 import time
 import pandas as pd
 import logging
-from datetime import datetime
-from common import request_text_soup, save_pic
+from common import request_text_soup
 
 # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
 typoMap = {'Маритиму': 'Маритиму Мадейра',
@@ -71,7 +70,7 @@ def calendar_processing(current_champ, current_champ_links):
     current_champ_link = current_champ_links['sports']
     if not current_champ_link:
         logging.warning('Для данного чемпионата календарь недоступен, обработка календаря пропускается...')
-        return
+        return None
     current_table_link = current_champ_link + 'table/'
     # получаем страницу с таблицей обрабатываемого чемпионата
     _, table_soup = request_text_soup(current_table_link)
@@ -142,11 +141,7 @@ def calendar_processing(current_champ, current_champ_links):
     champ_calendar = pd.DataFrame(champ_calendar_dict).transpose()
     # оформление и сохранение
     champ_calendar_style = champ_calendar.style.apply(highlight_cells)
-    directory = ('pics/{}/calendars/'.format(datetime.now().date()))
-    options = {'encoding': "UTF-8"}
-    path = save_pic(champ_calendar_style, directory, current_champ, options)
-
     # логирование времени обработки каждого чемпионата
     logging.info('Календарь чемпионата "{}" обработан, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
-    return path
+    return champ_calendar_style

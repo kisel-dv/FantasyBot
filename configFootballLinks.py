@@ -6,6 +6,10 @@
                         эмоджи для отображения сообщения в телеграм-сообщении в канале)
 """
 CHAMP_LINKS = {
+    'Корея': ('',
+              '',
+              'https://www.sports.ru/k-league-classic/',
+              '🇰🇷'),
     'Беларусь': ('https://www.marathonbet.ru/su/betting/Football/Belarus/Vysshaya+League',
                  'https://by.tribuna.com/fantasy/football/team/points/2213674.html',
                  'https://www.sports.ru/premier-league-belarus/',
