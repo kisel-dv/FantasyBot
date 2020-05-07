@@ -32,8 +32,8 @@ if __name__ == '__main__':
         logging.info('Обработка чемпионата "{}"...'.format(currentChamp))
         deadlineText, deadlineDate, matchNum = get_champ_meta(currentChampLinks['sportsFantasy'])
         # дебаг фича
-        if currentChamp == 'Беларусь':
-            deadlineDate = date.today()
+        # if currentChamp == 'Беларусь':
+        #    deadlineDate = date.today()
         # если дедлайн в прошлом или более чем через 5 дней, мы пропускаем обработку чемпионата
         if deadlineDate < date.today():
             logging.info('Нет даты дедлайна, чемпионат пропускается...')
