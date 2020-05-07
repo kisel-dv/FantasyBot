@@ -5,24 +5,22 @@ from contextlib import ExitStack
 import logging
 import time
 
-telebot.apihelper.CONNECT_TIMEOUT = 5
 
-
-def safety_send_group(channel_id, media):
+def safety_send_group(channel_id, media, proxy):
     bot = telebot.TeleBot(TOKEN)
-    for current_proxy in range(len(PROXY_LIST)):
-        telebot.apihelper.proxy = {'https': PROXY_LIST[current_proxy]}
-        for i in range(3):
-            try:
-                bot.send_media_group(channel_id, media)
-                logging.info('Статистика по чемпионату отправлена в канал')
-                return
-            except:
-                logging.warning(
-                    'Ошибка при попытке отправки сообщения в канал, прокси {}, попытка {}'.format(current_proxy, i + 1))
-                time.sleep(1)
-                continue
-    logging.error('Все прокси перепробованы, но запостить сообщение не вышло :(')
+    if proxy is not None:
+        telebot.apihelper.proxy = {'https': proxy}
+    for i in range(5):
+        try:
+            bot.send_media_group(channel_id, media)
+            logging.info('Статистика по чемпионату отправлена в канал')
+            return
+        except:
+            logging.warning(
+                'Ошибка при попытке отправки сообщения в канал, попытка {}'.format(i + 1))
+            time.sleep(1)
+            continue
+    logging.error('Запостить сообщение не вышло :(')
     raise Exception
 
 
@@ -34,7 +32,7 @@ def check_proxy():
             try:
                 bot.send_message(TEST_CHANNEL_ID, 'Прокси {} работает'.format(current_proxy))
                 logging.info('Прокси {} работает'.format(current_proxy))
-                return
+                return current_proxy
             except:
                 logging.warning(
                     'Ошибка при попытке отправки сообщения в канал, прокси {}, попытка {}'.format(current_proxy, i + 1))
@@ -52,11 +50,12 @@ def posting_to_channel(caption, *files, **kwargs):
         for i in range(len(pics)):
             media.append(InputMediaPhoto(pics[i], caption) if i == 0 else InputMediaPhoto(pics[i]))
         check_proxy()
-        safety_send_group(channel_id, media)
+        safety_send_group(channel_id, media, kwargs.get('proxy'))
     return
 
 
 # для проверки работы текущей прокси
 if __name__ == '__main__':
-    check_proxy()
-    posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png')
+    workingProxy = check_proxy()
+    posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png',
+                       proxy=workingProxy)
