@@ -82,8 +82,8 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     df = df.groupby(df['team']).sum()
     df = df.sort_values(by=['goals', 'cleansheet'], ascending=[0, 0])
     # округление чисел для облегчения визуального восприятия
-    df.goals = df.goals.round(2)
-    df.cleansheet = df.cleansheet.round(1)
+    df.cleansheet = df.cleansheet.round(2)
+    df.goals = df.goals.round(1)
     # установка стиля (раскраска)
     cm = sns.diverging_palette(25, 130, as_cmap=True)
     s = df.style.background_gradient(cmap=cm).set_properties(subset=['cleansheet', 'goals'],
