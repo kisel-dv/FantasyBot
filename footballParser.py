@@ -15,7 +15,7 @@ import pandas as pd
 logging.basicConfig(filename='log/{}.log'.format(date.today()), level=logging.INFO,
                     format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
 
-daysBeforeDeadlineLimit = 5
+daysBeforeDeadlineLimit = 3
 
 if __name__ == '__main__':
     # иницализация excelWriter, mode='w' для полной перезаписи файла
