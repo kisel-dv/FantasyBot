@@ -68,11 +68,13 @@ def get_champ_meta(link):
     deadline_text = ' '.join(deadline)
     # конвертируем в datetime часть даты вида "15 Апр"
     deadline_date = rus_date_convert(deadline[0])
+    matchweek = re.findall(r'<td>тур ([\d]*)', sports_fantasy_text)[0]
+    matchweek = int(matchweek)
     # вычисление количества матчей в туре с помощью страницы фентези команды на спортс ру
     match_table = sports_fantasy_soup.find('table', class_='stat-table with-places')
     # в некоторых случаях данной таблицы вообще не будет на странице, например, когда дата следующего тура неясна
     match_num = len(match_table.find_all('tr')) - 1 if match_table else 0
-    return deadline_text, deadline_date, match_num
+    return matchweek, deadline_text, deadline_date, match_num
 
 
 pathWkHtmlToImage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
