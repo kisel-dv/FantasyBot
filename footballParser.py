@@ -11,11 +11,12 @@ from datetime import date
 import logging
 import fantasyBot
 import pandas as pd
+from xbet import find_xbet_links
 
 logging.basicConfig(filename='log/{}.log'.format(date.today()), level=logging.INFO,
                     format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
 
-daysBeforeDeadlineLimit = 3
+daysBeforeDeadlineLimit = 4
 
 if __name__ == '__main__':
     # иницализация excelWriter, mode='w' для полной перезаписи файла
@@ -24,13 +25,14 @@ if __name__ == '__main__':
     # логирование информации о времени обработки
     startTime = time.time()
     logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
-
+    # функция, добавляющая в словарь CHAMP_LINKS ссылки на линию 1 x bet на чемпиона первенства
+    find_xbet_links()
     for currentChamp, currentChampLinks in CHAMP_LINKS.items():
         # фиксирование времени по каждому чемпионату
         champStartTime = time.time()
         # логирование обработки каждого чемпионата
         logging.info('Обработка чемпионата "{}"...'.format(currentChamp))
-        deadlineText, deadlineDate, matchNum = get_champ_meta(currentChampLinks['sportsFantasy'])
+        matchweek, deadlineText, deadlineDate, matchNum = get_champ_meta(currentChampLinks['sportsFantasy'])
         # дебаг фича
         # if currentChamp == 'Беларусь':
         #    deadlineDate = date.today()
@@ -38,13 +40,13 @@ if __name__ == '__main__':
         if deadlineDate < date.today():
             logging.info('Нет даты дедлайна, чемпионат пропускается...')
         elif -1 < (deadlineDate - date.today()).days > daysBeforeDeadlineLimit:
-            logging.info('До дедлайна больше 5 дней, чемпионат пропускается...')
+            logging.info('До дедлайна больше {} дней, чемпионат пропускается...'.format(daysBeforeDeadlineLimit))
         elif matchNum > 0:
             # обработка и сохранение картинкой информации с Марафона
             styledMarathon = marathon.marathon_processing(currentChamp, currentChampLinks, deadlineDate, matchNum)
             pathMarathon = save_pic(styledMarathon, MARATHON_DIR, currentChamp, 'marathon')
             # обработка и сохранение картинкой календаря со спортс.ру
-            styledCalendar = calendarSports.calendar_processing(currentChamp, currentChampLinks)
+            styledCalendar = calendarSports.calendar_processing(currentChamp, currentChampLinks, matchweek)
             pathCalendar = save_pic(styledCalendar, CALENDAR_DIR, currentChamp, 'calendar')
             # добавление подписи и выгрузка в телеграм-канал
             postCaption = get_champ_stats_caption(currentChamp, deadlineText, deadlineDate)
