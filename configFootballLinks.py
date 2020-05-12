@@ -30,7 +30,7 @@ CHAMP_LINKS = {
                'https://www.sports.ru/fantasy/football/team/2167027.html',
                'https://www.sports.ru/seria-a/',
                '🇮🇹'),
-    'Германия': ('',
+    'Германия': ('https://www.marathonbet.ru/su/betting/Football/Germany/Bundesliga+-+22436',
                  'https://www.sports.ru/fantasy/football/team/2125988.html',
                  'https://www.sports.ru/bundesliga/',
                  '🇩🇪'),
