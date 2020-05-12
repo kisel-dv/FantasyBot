@@ -49,7 +49,12 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     # фиксирование времени по каждому чемпионату, логирование обработки каждого чемпионата
     champ_start_time = time.time()
     # запрос страницы с матчами по текущему чемпионату
-    _, marathon_soup = request_text_soup(current_champ_links['marathon'])
+    link = current_champ_links['marathon']
+    if link:
+        _, marathon_soup = request_text_soup(link)
+    else:
+        logging.error('Пустая ссылка на марафон, несмотря на то, что дедлайн близко')
+        return pd.DataFrame({}).style
     # выделение ссылки на каждый матч,
     # выделение домашней и гостевой команд, сохранение в массив словарей по каждой игре
     matches = []
