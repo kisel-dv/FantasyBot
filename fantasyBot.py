@@ -1,4 +1,4 @@
-from config import TOKEN, TEST_CHANNEL_ID, CHANNEL_ID, PROXY_LIST
+from config import TOKEN, CHANNEL_ID, PROXY_LIST, SELF_CHAT_ID
 import telebot
 from telebot.types import InputMediaPhoto
 from contextlib import ExitStack
@@ -30,9 +30,10 @@ def check_proxy():
         telebot.apihelper.proxy = {'https': PROXY_LIST[current_proxy]}
         for i in range(3):
             try:
-                bot.send_message(TEST_CHANNEL_ID, 'Прокси {} работает'.format(current_proxy))
+                bot.send_message(SELF_CHAT_ID, 'Прокси {} работает'.format(current_proxy))
                 logging.info('Прокси {} работает'.format(current_proxy))
-                return current_proxy
+                PROXY_LIST[0], PROXY_LIST[current_proxy] = PROXY_LIST[current_proxy], PROXY_LIST[0]
+                return PROXY_LIST[0]
             except:
                 logging.warning(
                     'Ошибка при попытке отправки сообщения в канал, прокси {}, попытка {}'.format(current_proxy, i + 1))
@@ -42,6 +43,7 @@ def check_proxy():
     raise Exception
 
 
+# kwargs Для channel_id/proxy
 def posting_to_channel(caption, *files, **kwargs):
     channel_id = CHANNEL_ID if kwargs.get('channel_id') is None else kwargs['channel_id']
     with ExitStack() as stack:
@@ -49,13 +51,12 @@ def posting_to_channel(caption, *files, **kwargs):
         media = []
         for i in range(len(pics)):
             media.append(InputMediaPhoto(pics[i], caption) if i == 0 else InputMediaPhoto(pics[i]))
-        check_proxy()
-        safety_send_group(channel_id, media, kwargs.get('proxy'))
+        working_proxy = check_proxy()
+        safety_send_group(channel_id, media, working_proxy)
     return
 
 
 # для проверки работы текущей прокси
 if __name__ == '__main__':
-    workingProxy = check_proxy()
-    posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png',
-                       proxy=workingProxy)
+    posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png')
+    posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png')
