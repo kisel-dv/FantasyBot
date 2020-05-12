@@ -41,7 +41,7 @@ def difficulty_probs(t1, t2, side):
     if side == '(г)':
         t1, t2 = t2, t1
     diff = 0.23 + 0.175*log(championProbs[t1]) - 0.148*log(championProbs[t2])
-    return ((side == '(д)') - (side == '(г)')) * diff * 1.3
+    return ((side == '(д)') - (side == '(г)')) * diff * 1.4
 
 
 # цвет в зависимости от пороговых значений сложности
@@ -52,7 +52,7 @@ def get_color(x):
         color = 'background-color: #CC6600'
     elif (x >= -0.3) and (x <= 0.4):
         color = 'background-color: #FFFF19'
-    elif (x >= 0.4) and (x <= 0.9):
+    elif (x >= 0.4) and (x <= 1):
         color = 'background-color: #88CC00'
     else:
         color = 'background-color: #009900'
@@ -106,7 +106,7 @@ def table_processing(current_champ, champ_link, matchweek):
     for team in team_body_list:
         team_name = team.find('a', class_='name').get('title')
         team_links[team_name] = team.find('a', class_='name').get('href')
-        # если тур больше данной константы - обрабатываем численную статистику из таблицы
+        # если тур больше данной константы - обрабатываем численную статистику из таблицы - в противном случае будет {}
         if matchweek > MATCHES_ENOUGH_TO_USE_TABLE_STATS:
             team_numbers = team.find_all('td', class_=None)
             for j, n in enumerate(team_numbers):
@@ -118,6 +118,7 @@ def table_processing(current_champ, champ_link, matchweek):
                 'games'] if tableStats[team_name]['games'] else 0
     # транспонируем этот словарь, чтобы иметь доступ в другом порядке
     # (вместо team_name -> games -> 5 получаем games -> team_name -> 5)
+    # для случая, когда мы не хотим обрабатывать таблицу из-за малого количества туров, получим {}
     tableStats = dict(pd.DataFrame(tableStats).transpose())
     logging.info('Таблица чемпионата {} обработана'.format(current_champ))
     return team_links
