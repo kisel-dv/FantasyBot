@@ -6,7 +6,7 @@ import logging
 import time
 
 
-def safety_send_group(channel_id, media, proxy):
+def safety_send_group(channel_id, media, proxy=None):
     bot = telebot.TeleBot(TOKEN)
     if proxy is not None:
         telebot.apihelper.proxy = {'https': proxy}
@@ -30,15 +30,14 @@ def check_proxy():
         telebot.apihelper.proxy = {'https': PROXY_LIST[current_proxy]}
         for i in range(3):
             try:
-                bot.send_message(SELF_CHAT_ID, 'Прокси {} работает'.format(current_proxy))
-                logging.info('Прокси {} работает'.format(current_proxy))
+                bot.send_message(SELF_CHAT_ID, 'Прокси #{}'.format(current_proxy))
+                logging.info('Установлено соединение с помощью прокси #{}, попытка {}'.format(current_proxy, i + 1))
                 PROXY_LIST[0], PROXY_LIST[current_proxy] = PROXY_LIST[current_proxy], PROXY_LIST[0]
                 return PROXY_LIST[0]
             except:
-                logging.warning(
-                    'Ошибка при попытке отправки сообщения в канал, прокси {}, попытка {}'.format(current_proxy, i + 1))
                 time.sleep(1)
                 continue
+        logging.warning('Не удалось установить соединение с помощью прокси #{}'.format(current_proxy))
     logging.error('Все прокси перепробованы, но запостить сообщение не вышло :(')
     raise Exception
 
@@ -58,5 +57,4 @@ def posting_to_channel(caption, *files, **kwargs):
 
 # для проверки работы текущей прокси
 if __name__ == '__main__':
-    posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png')
     posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png')

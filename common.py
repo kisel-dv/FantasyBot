@@ -8,7 +8,6 @@ from configFootballLinks import CHAMP_LINKS
 import imgkit
 import logging
 import os
-import re
 
 # дикта, используемая для конвертации даты
 MONTHS = {'дек': 12, 'янв': 1, 'фев': 2,
@@ -53,28 +52,6 @@ def request_text_soup(link):
     req = urllib.request.Request(link)
     text = urllib.request.urlopen(req).read().decode('utf-8')
     return text, BeautifulSoup(text, 'html.parser')
-
-
-# функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
-# на выходе получаем представление даты дедлайна в двух видах: текстовом и datetime + количество матчей в туре
-def get_champ_meta(link):
-    if not link:
-        return '', date(2000, 1, 1), -1
-    # запрос страницы фентези команды на спортс ру
-    sports_fantasy_text, sports_fantasy_soup = request_text_soup(link)
-    # вычисление даты дедлайна - пока что время дедлайна не используется
-    # на спортс дата дедлайна в виде "15 Апр 18:00"
-    deadline = re.findall(r'Дедлайн</th>\n<td>([^<]*)[^\d]*(\d{2}:\d{2})', sports_fantasy_text)[0]
-    deadline_text = ' '.join(deadline)
-    # конвертируем в datetime часть даты вида "15 Апр"
-    deadline_date = rus_date_convert(deadline[0])
-    matchweek = re.findall(r'<td>тур ([\d]*)', sports_fantasy_text)[0]
-    matchweek = int(matchweek)
-    # вычисление количества матчей в туре с помощью страницы фентези команды на спортс ру
-    match_table = sports_fantasy_soup.find('table', class_='stat-table with-places')
-    # в некоторых случаях данной таблицы вообще не будет на странице, например, когда дата следующего тура неясна
-    match_num = len(match_table.find_all('tr')) - 1 if match_table else 0
-    return matchweek, deadline_text, deadline_date, match_num
 
 
 pathWkHtmlToImage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
