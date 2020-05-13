@@ -3,6 +3,7 @@ from configFootballLinks import CHAMP_LINKS
 from bs4 import BeautifulSoup
 import time
 import re
+import logging
 
 # путь к драйверу chrome
 chromeDriver = r'C:\chromedriver'
@@ -43,8 +44,8 @@ def champ_winner_probs(current_champ):
         browser.quit()
     for k, v in cs.items():
         cs[k] = v/sum(cs.values())
-    print('Линия букмекеров на победу в чемпионате собрана, время обработки: {}'.format(
-        round(time.time() - time_start, 3)))
+    logging.info('{}: Линия букмекеров на победу в чемпионате собрана, время обработки: {}s'.format(current_champ, round(
+        time.time() - time_start, 3)))
     return cs
 
 
@@ -53,6 +54,9 @@ def find_xbet_links():
     browser = webdriver.Chrome(executable_path=chromeDriver, options=chromeOptions)
     try:
         for current_champ in ['Корея', 'Беларусь']:
+            # если данный чемпионат не входит в список релевантных, то пропустить его
+            if CHAMP_LINKS[current_champ].get('match_num') is None:
+                continue
             browser.get(START_LINK)
             search_form = browser.find_element_by_class_name('sport-search__input')
             button = browser.find_element_by_class_name('sport-search__btn')
@@ -83,6 +87,7 @@ def find_xbet_links():
                         break
             print(target_link)
             CHAMP_LINKS[current_champ]['1x_winner'] = target_link
+            logging.info('{}: cсылка на 1xbet линию на чемпиона получена'.format(current_champ))
     finally:
         browser.close()
         browser.quit()

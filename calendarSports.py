@@ -32,7 +32,7 @@ def difficulty_table(t1, t2, side):
         return diff
     except KeyError:
         # если нашлась новая проблема с разными названиями в разных местах на спортс ру
-        logging.error('Unknown club, match {} - {}'.format(t1, t2))
+        logging.error('Неизвестный клуб, матч {} - {}'.format(t1, t2))
         return 0
 
 
@@ -120,7 +120,7 @@ def table_processing(current_champ, champ_link, matchweek):
     # (вместо team_name -> games -> 5 получаем games -> team_name -> 5)
     # для случая, когда мы не хотим обрабатывать таблицу из-за малого количества туров, получим {}
     tableStats = dict(pd.DataFrame(tableStats).transpose())
-    logging.info('Таблица чемпионата {} обработана'.format(current_champ))
+    logging.info('{}: таблица чемпионата обработана'.format(current_champ))
     return team_links
 
 
@@ -183,6 +183,6 @@ def calendar_processing(current_champ, current_champ_links, matchweek):
     champ_calendar_style = champ_calendar.style.apply(colorize_calendar) if (tableStats or championProbs)\
         else champ_calendar.style
     # логирование времени обработки каждого чемпионата
-    logging.info('Календарь чемпионата "{}" обработан, время обработки: {}s'.format(current_champ, round(
+    logging.info('{}: календарь чемпионата обработан, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
     return champ_calendar_style

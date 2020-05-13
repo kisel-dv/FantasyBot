@@ -96,6 +96,6 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
         {'cleansheet': '{:,.2f}',
          'goals': '{:,.1f}'})
     # логирование информации о скорости обработки каждого турнира
-    logging.info('Линия букмекера для "{}" обработана, время обработки: {}s'.format(current_champ, round(
+    logging.info('{}: линия марафон обработана, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
     return s
