@@ -1,8 +1,9 @@
 import time
 import pandas as pd
 import logging
-from common import request_text_soup
 from math import log
+
+from common import request_text_soup
 from xbet import champ_winner_probs
 
 MATCHES_ENOUGH_TO_USE_TABLE_STATS = 8

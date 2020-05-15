@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import seaborn as sns
 import logging
+
 from common import rus_date_convert, request_text_soup
 
 # выделение ссылок для каждого матча из доступной линии
@@ -24,7 +25,8 @@ def score_cleansheet_expected(team, match_soup):
     for goal_price in goals_over_prices:
         goals = goal_price.get('data-selection-key')[-3:]
         if goals != '1.5' and score == 0:
-            score += float(goals) - 1.5
+            # если в линии не было события вида тотал больше 1.5, считаем, что вероятность забить больше 1.5 равна 1
+            score = float(goals) - 1.5
         addition = multiplierMarathon / float(goal_price.text)
         score += addition
     # коэффициенты по событиям типа "первая/вторая команда забьет/не забьет"
@@ -32,15 +34,19 @@ def score_cleansheet_expected(team, match_soup):
         r'\d*@' + team + r'_Team_To_Score\.(yes|no)')})
     cs = 0.01
     addition_0 = 1  # больше 0.5 голов
-    # обработка
+    # обработка найденных по шаблону событий
     for cs_price in cs_prices:
         outcome = cs_price.get('data-selection-key')[-2:]
         c = multiplierMarathon / float(cs_price.text)
+        # для события "команда не забьет" - записываем вероятность в сухой матч для соперника
+        # для события "команда забьет" - получаем вероятность, которую нужно просуммировать с полученной ранее суммой
+        # при этом, в линии может не существовать данных событий - в таком случае будут использованы дефолтные значения
         if outcome == 'no':
             cs = c
         else:
             addition_0 = c
     # прибавка, чтобы аппроксимировать маленькие коэффициенты, которых нет в линии (на большое количество забитых мячей)
+    # данная прибавка взята как половина последней вероятности, которая была слагаемым суммы
     score += addition_0 + addition / 2
     return score, cs
 
@@ -68,7 +74,7 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
             matches.append({'link': elem.get('data-event-path'),
                             'home': home_team.strip(),
                             'guest': guest_team.strip()})
-    # срез только тех матчей, которые принадлежат ближайшему туру
+    # срез только тех матчей, которые принадлежат ближайшему туру на основании матчей, указанных на спортс.ру
     match_links = matches[:match_num]
     # подсчет матожидания голов и вероятности клиншита для каждого матча - занесение всей статистики в дикту
     week_stats = {'team': [], 'cleansheet': [], 'goals': []}

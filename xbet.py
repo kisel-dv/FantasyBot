@@ -1,9 +1,10 @@
 from selenium import webdriver
-from configFootballLinks import CHAMP_LINKS
 from bs4 import BeautifulSoup
 import time
 import re
 import logging
+
+from configFootballLinks import CHAMP_LINKS
 
 # путь к драйверу chrome
 chromeDriver = r'C:\chromedriver'
@@ -58,21 +59,27 @@ def find_xbet_links():
             if CHAMP_LINKS[current_champ].get('match_num') is None:
                 continue
             browser.get(START_LINK)
+            # нахождение поискового окна и кнопки поиска, очистка формы
             search_form = browser.find_element_by_class_name('sport-search__input')
             button = browser.find_element_by_class_name('sport-search__btn')
             search_form.clear()
+            # ввод текущего чемпионата в посиковое окно
             search_form.send_keys(current_champ)
             button.click()
             browser.implicitly_wait(1)
+            # нахождение кнопки поиска во всплывшем окне и клик
             button = browser.find_element_by_class_name('search-popup__button')
             button.click()
             browser.implicitly_wait(1)
+            # количество результатов поиска
             search_count = browser.find_element_by_class_name('search-popup__title')
             count = int(search_count.find_element_by_tag_name('span').text)
             if count == 0:
                 continue
+            # DEBUG print
             searched_text = browser.find_element_by_class_name('search-popup__input')
             print(search_count.text, searched_text.get_attribute('value'))
+            # взятие всех результатов поиска и проверка каждого из них на предмет соответствия целевому чемпионату
             search_result = browser.find_elements_by_class_name('search-popup-event')
             target_link = None
             for res_elem in search_result:
@@ -82,6 +89,7 @@ def find_xbet_links():
                 league = soup.find('div', class_='search-popup-event__league')
                 if league is not None:
                     league_name = league.text
+                    # TODO: переписать, неправильно работает в общем случае
                     if 'Футбол' in league_name and current_champ in league_name and 'Победитель' in league_name:
                         target_link = link
                         break

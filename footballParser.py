@@ -1,23 +1,25 @@
 """
 Единая точка входа - отсюда для каждого чемпионата вызываются marathon_processing и calendar_processing функции
 """
+import time
+from datetime import date
+import logging
+import pandas as pd
+import re
+
 import marathon
 import calendarSports
 from common import get_champ_stats_caption, save_pic, save_stats_excel, request_text_soup, rus_date_convert
 from configFootballLinks import CHAMP_LINKS
 from config import OUTPUT_EXCEL_PATH, MARATHON_DIR, CALENDAR_DIR
-import time
-from datetime import date
-import logging
-import fantasyBot
-import pandas as pd
 from xbet import find_xbet_links
-import re
+import fantasyBot
+
 
 logging.basicConfig(filename='log/{}.log'.format(date.today()), level=logging.INFO,
                     format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
 
-daysBeforeDeadlineLimit = 4
+daysBeforeDeadlineLimit = 5
 
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
@@ -69,7 +71,7 @@ if __name__ == '__main__':
     startTime = time.time()
     logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
     for currentChamp in CHAMP_LINKS.keys():
-        # функция, которая обновила данные в словаре: matchweek, deadline_text, deadline_date, match_num
+        # функция, которая обновляет данные в словаре CHAMP_LINKS: matchweek, deadline_text, deadline_date, match_num
         update_champ_meta(currentChamp)
     logging.info('-' * 90)
     # функция, добавляющая в словарь CHAMP_LINKS ссылки на линию 1 x bet на чемпиона для всех релевантных чемпионатов
@@ -94,13 +96,14 @@ if __name__ == '__main__':
         # добавление подписи и выгрузка в телеграм-канал
         postCaption = get_champ_stats_caption(currentChamp, deadlineText, deadlineDate)
         fantasyBot.posting_to_channel(postCaption, pathMarathon, pathCalendar)
+        # апдейт страницы в таблице
         save_stats_excel(writer, currentChamp, styledMarathon, styledCalendar)
 
         # логирование информации о скорости обработки каждого турнира
         logging.info('{}: чемпионат обработан, время обработки: {}s'.format(currentChamp,
-                                                                             round(time.time() - champStartTime, 3)))
+                                                                            round(time.time() - champStartTime, 3)))
         logging.info('-' * 90)
-
+    # если хотя бы одна страница была создана(хотя бы один чемпионат обработан), то перезаписываем таблицу на диске
     if len(writer.sheets):
         writer.save()
 

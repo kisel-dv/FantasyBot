@@ -4,10 +4,11 @@
 import urllib.request
 from bs4 import BeautifulSoup
 from datetime import date, datetime
-from configFootballLinks import CHAMP_LINKS
 import imgkit
 import logging
 import os
+
+from configFootballLinks import CHAMP_LINKS
 
 # дикта, используемая для конвертации даты
 MONTHS = {'дек': 12, 'янв': 1, 'фев': 2,
@@ -36,6 +37,7 @@ def rus_date_convert(d, t=''):
         return date.today()
 
 
+# маппинг дня недели в сокращенное кириллическое представление
 WEEKDAY_CYRILLIC = {0: 'ПН', 1: 'ВТ', 2: 'СР', 3: 'ЧТ', 4: 'ПТ', 5: 'СБ', 6: 'ВС'}
 
 

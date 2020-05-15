@@ -1,9 +1,10 @@
-from config import TOKEN, CHANNEL_ID, PROXY_LIST, SELF_CHAT_ID
 import telebot
 from telebot.types import InputMediaPhoto
 from contextlib import ExitStack
 import logging
 import time
+
+from config import TOKEN, CHANNEL_ID, PROXY_LIST, SELF_CHAT_ID
 
 
 def safety_send_group(channel_id, media, proxy=None):
@@ -32,6 +33,7 @@ def check_proxy():
             try:
                 bot.send_message(SELF_CHAT_ID, 'Прокси #{}'.format(current_proxy))
                 logging.info('Установлено соединение с помощью прокси #{}, попытка {}'.format(current_proxy, i + 1))
+                # чтобы работающая прокси была первой на следующую проверку
                 PROXY_LIST[0], PROXY_LIST[current_proxy] = PROXY_LIST[current_proxy], PROXY_LIST[0]
                 return PROXY_LIST[0]
             except:
