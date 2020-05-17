@@ -88,20 +88,52 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
         week_stats['cleansheet'].extend([cs_prob_home, cs_prob_away])
         week_stats['goals'].extend([expected_score_home, expected_score_away])
 
-    df = pd.DataFrame(week_stats)
+    '''
+    раскрашиваем и сортируем датафрейм, чтобы получить корректную раскраску, а потом, выцепив эту раскраску,
+    применяем ее к датафрейму, основанному на тех же данных, но содержащий текстовые данные в колонках, чтобы
+    можно было четче выделять спаренные матчи в игровом туре
+    '''
+    color_df = pd.DataFrame(week_stats, index=None)
     # суммирование покомандно - для ситуаций, где у какой-либо команды в одном туре будет несколько матчей
-    df = df.groupby(df['team']).sum()
-    df = df.sort_values(by=['goals', 'cleansheet'], ascending=[0, 0])
-    # округление чисел для облегчения визуального восприятия
-    df.cleansheet = df.cleansheet.round(2)
-    df.goals = df.goals.round(1)
+    color_df = color_df.groupby(color_df['team'], as_index=False).sum()
+    color_df = color_df.sort_values(by=['goals', 'cleansheet'], ascending=[0, 0])
     # установка стиля (раскраска)
     cm = sns.diverging_palette(25, 130, as_cmap=True)
-    s = df.style.background_gradient(cmap=cm).set_properties(subset=['cleansheet', 'goals'],
-                                                             **{'width': '40px', 'text-align': 'center'}).format(
-        {'cleansheet': '{:,.2f}',
-         'goals': '{:,.1f}'})
+    color_s = color_df.style.background_gradient(cmap=cm, subset=['cleansheet', 'goals'])
+    # для обновления параметра ctx в дикте styler объекта s - так сказать, применения раскраски
+    color_s.render()
+
+    # а теперь уже готовим датафрейм, который и пойдет на выход
+    df = pd.DataFrame(week_stats, index=None)
+    # округления для улучшения зрительного восприятия
+    df.cleansheet = df.cleansheet.round(2)
+    df.goals = df.goals.round(1)
+    # группировка данных по командам + форматирование данных в каждой ячейке
+    df = df.groupby(df['team'], as_index=False).agg(
+        {'cleansheet': lambda x: '{:.2f}'.format(sum(x)) + (' ({})'.format(
+            '+'.join(map(str, map(lambda y: round(y, 2), x)))) if len(x) > 1 else ''),
+         'goals': lambda x: '{:.1f}'.format(sum(x)) + (' ({})'.format(
+             '+'.join(map(str, map(lambda y: round(y, 1), x)))) if len(x) > 1 else '')})
+    # применяем индексы, полученные в ходе сортировки числовых данных
+    df = df.loc[color_df.index]
+    # прячем индекс, который не нужен на выходе
+    s = df.style.hide_index()
+    # редактирование тонкостей оформления в колонках
+    s = s.set_properties(subset=['cleansheet', 'goals'], **{'width': '120px', 'text-align': 'center'})
+    s = s.set_properties(subset=['team'], **{'width': '210px', 'text-align': 'center', 'font-weight': 'bold'})
+    # и, наконец, подкрутка расцветки, а именно, взятие ее из обработанного датафрейма с числовыми данными
+    s.ctx = color_s.ctx
+
     # логирование информации о скорости обработки каждого турнира
     logging.info('{}: линия марафон обработана, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
     return s
+
+
+if __name__ == '__main__':
+    from datetime import date
+    from configFootballLinks import CHAMP_LINKS
+    styledMarathon = marathon_processing('Германия', CHAMP_LINKS['Германия'], date.today(), 10)
+    from common import save_pic
+    from config import MARATHON_DIR
+    save_pic(styledMarathon, MARATHON_DIR, 'Германия1', 'marathon')
