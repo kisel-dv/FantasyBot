@@ -66,11 +66,11 @@ def find_xbet_links():
             # ввод текущего чемпионата в посиковое окно
             search_form.send_keys(current_champ)
             button.click()
-            browser.implicitly_wait(1)
+            browser.implicitly_wait(2)
             # нахождение кнопки поиска во всплывшем окне и клик
             button = browser.find_element_by_class_name('search-popup__button')
             button.click()
-            browser.implicitly_wait(1)
+            browser.implicitly_wait(2)
             # количество результатов поиска
             search_count = browser.find_element_by_class_name('search-popup__title')
             count = int(search_count.find_element_by_tag_name('span').text)
@@ -100,7 +100,3 @@ def find_xbet_links():
         browser.close()
         browser.quit()
     return
-
-
-if __name__ == '__main__':
-    find_xbet_links()

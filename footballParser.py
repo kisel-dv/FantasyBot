@@ -19,7 +19,7 @@ import fantasyBot
 logging.basicConfig(filename='log/{}.log'.format(date.today()), level=logging.INFO,
                     format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
 
-daysBeforeDeadlineLimit = 5
+daysBeforeDeadlineLimit = 3
 
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду

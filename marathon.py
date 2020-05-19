@@ -128,12 +128,3 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     logging.info('{}: линия марафон обработана, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))
     return s
-
-
-if __name__ == '__main__':
-    from datetime import date
-    from configFootballLinks import CHAMP_LINKS
-    styledMarathon = marathon_processing('Германия', CHAMP_LINKS['Германия'], date.today(), 10)
-    from common import save_pic
-    from config import MARATHON_DIR
-    save_pic(styledMarathon, MARATHON_DIR, 'Германия1', 'marathon')

@@ -55,8 +55,3 @@ def posting_to_channel(caption, *files, **kwargs):
         working_proxy = check_proxy()
         safety_send_group(channel_id, media, working_proxy)
     return
-
-
-# для проверки работы текущей прокси
-if __name__ == '__main__':
-    posting_to_channel('test', r'pics/2020-04-30/calendars/Беларусь.png', r'pics/2020-04-30/Беларусь.png')
