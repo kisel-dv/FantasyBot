@@ -6,7 +6,8 @@ from math import log
 from common import request_text_soup
 from xbet import champ_winner_probs
 
-MATCHES_ENOUGH_TO_USE_TABLE_STATS = 8
+# количество матчей, начиная с которой мы можем использовать статистику из таблицы лиги
+MATCHES_ENOUGH_TO_USE_TABLE_STATS = 5
 # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
 typoMap = {'Маритиму': 'Маритиму Мадейра',
            'Санта-Клара': 'Санта Клара'}
@@ -170,7 +171,7 @@ def calendar_processing(current_champ, current_champ_links, matchweek):
         team_calendar = [[date[i] + ' ' + opponent[i] + side[i],
                          competition[i]] for i in range(0, len(opponent))]
         # выделение календаря будущих игр - их мы находим по наличию ссылки на превью вместо счета
-        future_team_calendar = team_calendar[result.index('превью'):]
+        future_team_calendar = team_calendar[result.index('превью'):] if 'превью' in result else []
         # берем из списка будущих игр только те, которые будут проходить в интересующем нас чемпионате
         # для проверки используем ссылку на чемпионат из нашего маппинга, сравнивая ее со ссылкой на
         # чемпионат, который соответствует обрабатываемой игре

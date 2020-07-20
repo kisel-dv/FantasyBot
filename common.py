@@ -51,7 +51,8 @@ def get_champ_stats_caption(champ, deadline, deadline_date):
 
 # функция для обработки каждой страницы, возвращает пару (текст страницы, soup объект)
 def request_text_soup(link):
-    req = urllib.request.Request(link)
+    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"}
+    req = urllib.request.Request(link, headers=headers)
     text = urllib.request.urlopen(req).read().decode('utf-8')
     return text, BeautifulSoup(text, 'html.parser')
 
@@ -85,7 +86,7 @@ def save_stats_excel(writer, champ, marathon, calendar):
     for col in 'ABCDEF':
         writer.sheets[champ].column_dimensions[col].width = 30
     # записываем матожидания
-    marathon.to_excel(writer, sheet_name=champ, startrow=0, startcol=0)
+    marathon.to_excel(writer, sheet_name=champ, startrow=0, startcol=0, index=False)
     # с отступом в 5 строк записываем календарь
     calendar.to_excel(writer, sheet_name=champ, startrow=marathon.data.shape[0] + 5, startcol=0)
     logging.info('{}: информация в excel обновлена'.format(champ))
