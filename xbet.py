@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup
 import time
 import re
 import logging
+import json
 
-from configFootballLinks import CHAMP_LINKS
+from configFootballLinks import CHAMP_LINKS, xbetToSportsMap, XBET_CHAMP_NAMES, XBET_LONG_BETS
+from common import request_text_soup
 
 # путь к драйверу chrome
 chromeDriver = r'C:\chromedriver'
@@ -15,12 +17,12 @@ START_LINK = 'https://1xstavka.ru/line/Football/'
 
 # функция, тянущая с 1xbet коэффициенты на чемпиона первенства
 def champ_winner_probs(current_champ):
+    time_start = time.time()
     browser = webdriver.Chrome(executable_path=chromeDriver, options=chromeOptions)
     if not CHAMP_LINKS[current_champ].get('1x_winner'):
         return {}
     link = CHAMP_LINKS[current_champ]['1x_winner']
     browser.get(link)
-    time_start = time.time()
     try:
         page_html = browser.page_source
         soup = BeautifulSoup(page_html, 'html.parser')
@@ -50,53 +52,26 @@ def champ_winner_probs(current_champ):
     return cs
 
 
-# парсер для вытягивания ссылки на букмекерскую линию на победителя чемпионата
-def find_xbet_links():
-    browser = webdriver.Chrome(executable_path=chromeDriver, options=chromeOptions)
-    try:
-        for current_champ in ['Корея', 'Беларусь']:
-            # если данный чемпионат не входит в список релевантных, то пропустить его
-            if CHAMP_LINKS[current_champ].get('match_num') is None:
+def find_xbet_links(test=False):
+    for current_champ in CHAMP_LINKS:
+        if current_champ in XBET_LONG_BETS:
+            link = XBET_LONG_BETS[current_champ]
+            _, soup = request_text_soup(link)
+            json_events = soup.find('script', type="application/ld+json")
+            if json_events is None:
                 continue
-            browser.get(START_LINK)
-            # нахождение поискового окна и кнопки поиска, очистка формы
-            search_form = browser.find_element_by_class_name('sport-search__input')
-            button = browser.find_element_by_class_name('sport-search__btn')
-            search_form.clear()
-            # ввод текущего чемпионата в посиковое окно
-            search_form.send_keys(current_champ)
-            button.click()
-            browser.implicitly_wait(2)
-            # нахождение кнопки поиска во всплывшем окне и клик
-            button = browser.find_element_by_class_name('search-popup__button')
-            button.click()
-            browser.implicitly_wait(2)
-            # количество результатов поиска
-            search_count = browser.find_element_by_class_name('search-popup__title')
-            count = int(search_count.find_element_by_tag_name('span').text)
-            if count == 0:
-                continue
-            # DEBUG print
-            searched_text = browser.find_element_by_class_name('search-popup__input')
-            print(search_count.text, searched_text.get_attribute('value'))
-            # взятие всех результатов поиска и проверка каждого из них на предмет соответствия целевому чемпионату
-            search_result = browser.find_elements_by_class_name('search-popup-event')
-            target_link = None
-            for res_elem in search_result:
-                link = res_elem.get_attribute('href')
-                html_elem = res_elem.get_attribute('innerHTML')
-                soup = BeautifulSoup(html_elem, 'html.parser')
-                league = soup.find('div', class_='search-popup-event__league')
-                if league is not None:
-                    league_name = league.text
-                    # TODO: переписать, неправильно работает в общем случае
-                    if 'Футбол' in league_name and current_champ in league_name and 'Победитель' in league_name:
-                        target_link = link
-                        break
-            print(target_link)
+            json_events_text = json_events.text
+            list_line = json.loads(json_events_text)
+            for link_meta in list_line:
+                if link_meta['name'] == XBET_CHAMP_NAMES[current_champ]:
+                    target_link = link_meta['url']
+                    break
             CHAMP_LINKS[current_champ]['1x_winner'] = target_link
-            logging.info('{}: cсылка на 1xbet линию на чемпиона получена'.format(current_champ))
-    finally:
-        browser.close()
-        browser.quit()
+            print(current_champ, target_link)
     return
+
+
+if __name__ == '__main__':
+    find_xbet_links(True)
+    print(champ_winner_probs('Корея'))
+    print(champ_winner_probs('Беларусь'))
