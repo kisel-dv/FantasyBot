@@ -5,7 +5,7 @@ import re
 import logging
 import json
 
-from configFootballLinks import CHAMP_LINKS, xbetToSportsMap, XBET_CHAMP_NAMES, XBET_LONG_BETS
+from configFootballLinks import CHAMP_LINKS, XBET_TO_SPORTS_TEAM_MAP, XBET_CHAMP_NAMES, XBET_LONG_BETS
 from common import request_text_soup
 
 # путь к драйверу chrome
@@ -36,7 +36,7 @@ def champ_winner_probs(current_champ):
                 res = bet_text[1]
                 if res[:2] == 'Да':
                     try:
-                        team = CHAMP_LINKS[current_champ]['1x_sports_map'][team]
+                        team = XBET_TO_SPORTS_TEAM_MAP[current_champ][team]
                     except KeyError:
                         print('Команда {} не найдена в маппинге в sports.ru имена'.format(team))
                         raise Exception
@@ -53,21 +53,27 @@ def champ_winner_probs(current_champ):
 
 
 def find_xbet_links(test=False):
+    logging.info('Выгрузка ссылок на линии победителей чемпионатов с 1xbet')
     for current_champ in CHAMP_LINKS:
         if current_champ in XBET_LONG_BETS:
             link = XBET_LONG_BETS[current_champ]
             _, soup = request_text_soup(link)
             json_events = soup.find('script', type="application/ld+json")
             if json_events is None:
+                logging.warning('{}: нет событий по ссылке из конфиг-файла'.format(current_champ))
                 continue
             json_events_text = json_events.text
             list_line = json.loads(json_events_text)
             for link_meta in list_line:
                 if link_meta['name'] == XBET_CHAMP_NAMES[current_champ]:
                     target_link = link_meta['url']
+                    CHAMP_LINKS[current_champ]['1x_winner'] = target_link
+                    logging.info('{}: ссылка на линию на чемпиона получена'.format(current_champ))
                     break
-            CHAMP_LINKS[current_champ]['1x_winner'] = target_link
-            print(current_champ, target_link)
+            if CHAMP_LINKS[current_champ].get('1x_winner') is None:
+                logging.warning('{}: нет подходящего события'.format(current_champ))
+        else:
+            logging.info('{}: в конфиг-файле отсутствует ссылка на чемпионат'.format(current_champ))
     return
 
 
@@ -75,3 +81,4 @@ if __name__ == '__main__':
     find_xbet_links(True)
     print(champ_winner_probs('Корея'))
     print(champ_winner_probs('Беларусь'))
+    print(champ_winner_probs('Россия'))

@@ -10,10 +10,10 @@ CHAMP_LINKS = {
               'https://www.sports.ru/fantasy/football/team/2218267.html',
               'https://www.sports.ru/k-league-classic/',
               '🇰🇷'),
-    # 'Беларусь': ('https://www.marathonbet.ru/su/betting/Football/Belarus/Vysshaya+League',
-    #              'https://by.tribuna.com/fantasy/football/team/points/2213674.html',
-    #              'https://www.sports.ru/premier-league-belarus/',
-    #              '🇧🇾'),
+    'Беларусь': ('https://www.marathonbet.ru/su/betting/Football/Belarus/Vysshaya+League',
+                 'https://by.tribuna.com/fantasy/football/team/points/2213674.html',
+                 'https://www.sports.ru/premier-league-belarus/',
+                 '🇧🇾'),
     'Англия': ('https://www.marathonbet.ru/su/popular/Football/England/Premier+League+-+21520',
                'https://www.sports.ru/fantasy/football/team/2121292.html',
                'https://www.sports.ru/epl/',
@@ -64,9 +64,23 @@ CHAMP_LINKS = {
                     '🇪🇺')
 }
 
+# преобразование в словарь словарей
+for key in CHAMP_LINKS:
+    k = ('marathon', 'sportsFantasy', 'sports', 'emoji')
+    CHAMP_LINKS[key] = dict(zip(k, CHAMP_LINKS[key]))
 
-# маппинг названий команд на 1xbet -> sports.ru
-xbetToSportsMap = {
+
+XBET_CHAMP_NAMES = {'Корея': 'Футбол - Чемпионат Южной Кореи. 2020. Победитель',
+                    'Беларусь': 'Футбол - Чемпионат Беларуси. Высшая лига. 2020. Победитель',
+                    'Россия': 'Футбол - Чемпионат России. Премьер-лига. 2020/21. Победитель'}
+
+XBET_LONG_BETS = {'Корея': 'https://1xstavka.ru/line/long/Football/1969006-South-Korea-Winner/',
+                  'Беларусь': 'https://1xstavka.ru/line/long/Football/2078497-Belarus-Winner/',
+                  'Россия': 'https://1xstavka.ru/line/long/Football/1752709-Russia-Winner/'}
+
+# 1xbet -> sports.ru
+# todo: поменять этот маппинг на маппинг исправлений, где эти имена разные
+XBET_TO_SPORTS_TEAM_MAP = {
     'Корея': {
         'Чонбук Моторс': 'Чонбук Хендай Моторс',
         'Ульсан Хёндэ': 'Ульсан Хендай',
@@ -98,13 +112,23 @@ xbetToSportsMap = {
         'Рух Брест': 'Рух Брест',
         'Смолевичи-СТИ': 'Смолевичи',
         'Белшина': 'Белшина'
+    },
+    'Россия': {
+        'Зенит': 'Зенит',
+        'Краснодар': 'Локомотив',
+        'Локомотив': 'Краснодар',
+        'ЦСКА': 'ЦСКА',
+        'Спартак': 'Спартак',
+        'Динамо Москва': 'Динамо',
+        'Ростов': 'Ростов',
+        'Рубин': 'Рубин',
+        'Сочи': 'Сочи',
+        'Урал': 'Урал',
+        'Ротор': 'Ротор',
+        'Химки': 'Химки',
+        'Уфа': 'Уфа',
+        'Арсенал Тула': 'Арсенал Тула',
+        'Тамбов': 'Тамбов',
+        'Ахмат': 'Ахмат'
     }
 }
-
-
-# преобразование в словарь словарей
-for key in CHAMP_LINKS:
-    k = ('marathon', 'sportsFantasy', 'sports', 'emoji')
-    CHAMP_LINKS[key] = dict(zip(k, CHAMP_LINKS[key]))
-    if key in xbetToSportsMap:
-        CHAMP_LINKS[key]['1x_sports_map'] = xbetToSportsMap[key]
