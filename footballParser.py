@@ -124,4 +124,5 @@ def run_stats_update(mode='prod'):
 
 
 if __name__ == '__main__':
-    run_stats_update('prod')
+    run_stats_update('test')
+    #run_stats_update('prod')

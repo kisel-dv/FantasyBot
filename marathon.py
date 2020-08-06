@@ -10,7 +10,7 @@ from common import rus_date_convert, request_text_soup
 prefixMarathon = 'https://www.marathonbet.ru/su/betting/'
 
 # задание констант, описывающих маржу букмекера - для конвертации коэффициентов в вероятность
-margeMarathon = 0.05
+margeMarathon = 0.01
 multiplierMarathon = 1/(1 + margeMarathon)
 
 

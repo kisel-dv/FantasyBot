@@ -6,3 +6,4 @@ __pycache__/
 log/
 creds/
 config.py
+junk.py
