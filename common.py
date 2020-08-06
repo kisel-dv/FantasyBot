@@ -88,6 +88,7 @@ def save_stats_excel(writer, champ, marathon, calendar):
     # записываем матожидания
     marathon.to_excel(writer, sheet_name=champ, startrow=0, startcol=0, index=False)
     # с отступом в 5 строк записываем календарь
-    calendar.to_excel(writer, sheet_name=champ, startrow=marathon.data.shape[0] + 5, startcol=0)
+    if calendar is not None:
+        calendar.to_excel(writer, sheet_name=champ, startrow=marathon.data.shape[0] + 5, startcol=0)
     logging.info('{}: информация в excel обновлена'.format(champ))
     return
