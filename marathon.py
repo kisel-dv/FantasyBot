@@ -51,16 +51,56 @@ def score_cleansheet_expected(team, match_soup):
     return score, cs
 
 
+def get_style_params(week_stats):
+    color_df = pd.DataFrame(week_stats, index=None)
+    # суммирование покомандно - для ситуаций, где у какой-либо команды в одном туре будет несколько матчей
+    color_df = color_df.groupby(color_df['team'], as_index=False).sum()
+    color_df = color_df.sort_values(by=['goals', 'cleansheet'], ascending=[0, 0])
+    # установка стиля (раскраска)
+    cm = sns.diverging_palette(25, 130, as_cmap=True)
+    color_s = color_df.style.background_gradient(cmap=cm, subset=['cleansheet', 'goals'])
+    # для обновления параметра ctx в дикте styler объекта s - так сказать, применения раскраски
+    color_s.render()
+    return color_s.ctx, color_s.index
+
+
+def set_style(week_stats, color_scheme, team_order):
+    # а теперь уже готовим датафрейм, который и пойдет на выход
+    df = pd.DataFrame(week_stats, index=None)
+    # округления для улучшения зрительного восприятия
+    # df.cleansheet = df.cleansheet.round(2)
+    # df.goals = df.goals.round(1)
+    # группировка данных по командам + форматирование данных в каждой ячейке
+    df = df.groupby(df['team'], as_index=False).agg(
+        {'cleansheet': lambda x: '{:.2f}'.format(sum(x)) + (' ({})'.format(
+            '+'.join(map(str, map(lambda y: round(y, 2), x)))) if len(x) > 1 else ''),
+         'goals': lambda x: '{:.1f}'.format(sum(x)) + (' ({})'.format(
+             '+'.join(map(str, map(lambda y: round(y, 1), x)))) if len(x) > 1 else ''),
+         'opponent': lambda x: ' + '.join(x) if len(x) > 1 else x})
+    # применяем индексы, полученные в ходе сортировки числовых данных
+    df = df.loc[team_order]
+    # прячем индекс, который не нужен на выходе
+    s = df.style.hide_index()
+    # и, наконец, подкрутка расцветки, а именно, взятие ее из обработанного датафрейма с числовыми данными
+    s.ctx = color_scheme
+    # редактирование тонкостей оформления в колонках
+    s = s.set_properties(subset=['cleansheet', 'goals'], **{'width': '120px', 'text-align': 'center'})
+    s = s.set_properties(subset=['team'], **{'width': '210px', 'text-align': 'center', 'font-weight': 'bold'})
+    s = s.set_properties(subset=['opponent'],
+                         **{'width': str(max(s.data.opponent.apply(len)) * 9) + 'px', 'text-align': 'left'})
+    s.render()
+    return s
+
+
 def marathon_processing(current_champ, current_champ_links, deadline_date, match_num):
     # фиксирование времени по каждому чемпионату, логирование обработки каждого чемпионата
     champ_start_time = time.time()
     # запрос страницы с матчами по текущему чемпионату
     link = current_champ_links['marathon']
-    if link:
-        _, marathon_soup = request_text_soup(link)
-    else:
+    if not link:
         logging.error('Пустая ссылка на марафон, несмотря на то, что дедлайн близко')
-        return pd.DataFrame({}).style
+        return
+    _, marathon_soup = request_text_soup(link)
     # выделение ссылки на каждый матч,
     # выделение домашней и гостевой команд, сохранение в массив словарей по каждой игре
     matches = []
@@ -74,7 +114,7 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
             matches.append({'link': elem.get('data-event-path'),
                             'home': home_team.strip(),
                             'guest': guest_team.strip()})
-    # срез только тех матчей, которые принадлежат ближайшему туру на основании матчей, указанных на спортс.ру
+    # срез только тех матчей, которые принадлежат ближайшему туру на основании метаданных тура
     match_links = matches[:match_num]
     # подсчет матожидания голов и вероятности клиншита для каждого матча - занесение всей статистики в дикту
     week_stats = {'team': [], 'cleansheet': [], 'goals': [], 'opponent': []}
@@ -94,38 +134,8 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     применяем ее к датафрейму, основанному на тех же данных, но содержащий текстовые данные в колонках, чтобы
     можно было четче выделять спаренные матчи в игровом туре
     '''
-    color_df = pd.DataFrame(week_stats, index=None)
-    # суммирование покомандно - для ситуаций, где у какой-либо команды в одном туре будет несколько матчей
-    color_df = color_df.groupby(color_df['team'], as_index=False).sum()
-    color_df = color_df.sort_values(by=['goals', 'cleansheet'], ascending=[0, 0])
-    # установка стиля (раскраска)
-    cm = sns.diverging_palette(25, 130, as_cmap=True)
-    color_s = color_df.style.background_gradient(cmap=cm, subset=['cleansheet', 'goals'])
-    # для обновления параметра ctx в дикте styler объекта s - так сказать, применения раскраски
-    color_s.render()
-
-    # а теперь уже готовим датафрейм, который и пойдет на выход
-    df = pd.DataFrame(week_stats, index=None)
-    # округления для улучшения зрительного восприятия
-    # df.cleansheet = df.cleansheet.round(2)
-    # df.goals = df.goals.round(1)
-    # группировка данных по командам + форматирование данных в каждой ячейке
-    df = df.groupby(df['team'], as_index=False).agg(
-        {'cleansheet': lambda x: '{:.2f}'.format(sum(x)) + (' ({})'.format(
-            '+'.join(map(str, map(lambda y: round(y, 2), x)))) if len(x) > 1 else ''),
-         'goals': lambda x: '{:.1f}'.format(sum(x)) + (' ({})'.format(
-             '+'.join(map(str, map(lambda y: round(y, 1), x)))) if len(x) > 1 else ''),
-         'opponent': lambda x: ' + '.join(x) if len(x) > 1 else x})
-    # применяем индексы, полученные в ходе сортировки числовых данных
-    df = df.loc[color_df.index]
-    # прячем индекс, который не нужен на выходе
-    s = df.style.hide_index()
-    # редактирование тонкостей оформления в колонках
-    s = s.set_properties(subset=['cleansheet', 'goals'], **{'width': '120px', 'text-align': 'center'})
-    s = s.set_properties(subset=['team'], **{'width': '210px', 'text-align': 'center', 'font-weight': 'bold'})
-    # и, наконец, подкрутка расцветки, а именно, взятие ее из обработанного датафрейма с числовыми данными
-    s.ctx = color_s.ctx
-
+    color_scheme, team_order = get_style_params(week_stats)
+    s = set_style(week_stats, color_scheme, team_order)
     # логирование информации о скорости обработки каждого турнира
     logging.info('{}: линия марафон обработана, время обработки: {}s'.format(current_champ, round(
         time.time() - champ_start_time, 3)))

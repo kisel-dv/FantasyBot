@@ -67,7 +67,7 @@ def save_pic(s, directory, name, flag):
     options = {'encoding': "UTF-8"}
     if flag == 'marathon':
         # дополнительные настройки для сохранения картинкой
-        options.update({'width': str(max(700, 10 * sum(s.data.apply(lambda x: max(map(lambda y: len(y), x)))))),
+        options.update({'width': str(450 + int(s.ctx[(0, 3)][0][:-2].split()[-1])),
                         'height': str(24 * s.data.shape[0] + 36)})
     html = s.render()
     if not os.path.isdir(directory):
