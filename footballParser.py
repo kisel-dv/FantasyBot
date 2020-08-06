@@ -89,15 +89,15 @@ def run_stats_update(mode='prod'):
     logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
     fantasyBot.posting_info_message(channel_id, 'Обновление коэффициентов...')
     for current_champ, current_champ_links in CHAMP_LINKS.items():
-        logging.info('-' * 90)
         # фиксирование времени по каждому чемпионату
         champ_start_time = time.time()
+        logging.info('-' * 90)
+        logging.info('{}: старт обработки чемпионата...'.format(current_champ))
+        # обработка метаданных со спортс.ру
         meta = pull_champ_meta(current_champ)
         if meta is None:
             continue
         deadline_date, deadline_text, matchweek, match_num = meta
-        # логирование обработки каждого чемпионата
-        logging.info('{}: старт обработки чемпионата...'.format(current_champ))
         # обработка и сохранение картинкой информации с Марафона
         styled_marathon = marathon.marathon_processing(current_champ, current_champ_links, deadline_date, match_num)
         path_marathon = common.save_pic(styled_marathon, MARATHON_DIR, current_champ, 'marathon')
