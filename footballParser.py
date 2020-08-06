@@ -22,61 +22,62 @@ daysBeforeDeadlineLimit = 2
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
 # на выходе получаем представление даты дедлайна в двух видах: текстовом и datetime + количество матчей в туре
-def update_champ_meta(current_champ):
+def pull_champ_meta(current_champ):
     link = CHAMP_LINKS[current_champ]['sportsFantasy']
-    if link:
-        # запрос страницы фентези команды на спортс ру
-        _, sports_fantasy_soup = common.request_text_soup(link)
-        # взятие элемента с дедлайном и номером тура
-        target_elem = sports_fantasy_soup.find('div', class_='team-info-block')
-        if target_elem is None:
-            logging.error('{}: ошибка в формате страницы на спортс.ру'.format(current_champ))
-            return
+    if not link:
+        logging.warning('{}: Отсутствует ссылка на метаданные')
+        return
+    # запрос страницы фентези команды на спортс ру
+    _, sports_fantasy_soup = common.request_text_soup(link)
+    # взятие элемента с дедлайном и номером тура
+    target_elem = sports_fantasy_soup.find('div', class_='team-info-block')
+    if target_elem is None:
+        logging.error('{}: Ошибка в формате страницы на спортс.ру'.format(current_champ))
+        return
 
-        td = target_elem.find_all('td')
-        if len(td) < 2:
-            logging.error('{}: ошибка в формате страницы на спортс.ру'.format(current_champ))
-            return
+    td = target_elem.find_all('td')
+    if len(td) < 2:
+        logging.error('{}: Ошибка в формате страницы на спортс.ру'.format(current_champ))
+        return
 
-        match_week = td[0].text.split()[1].strip('.')
-        if not match_week.isdigit():
-            logging.info('{}: текущий сезон чемпионата завершен, чемпионат пропускается...'.format(current_champ))
-            return
+    match_week = td[0].text.split()[1].strip('.')
+    if not match_week.isdigit():
+        logging.info('{}: Текущий сезон чемпионата завершен, чемпионат пропускается...'.format(current_champ))
+        return
 
-        match_week = int(match_week)
-        # на спортс дата дедлайна в виде "15 Апр 18:00" - пока что время дедлайна не используется
-        deadline_text = td[1].text
-        # конвертируем в datetime часть даты вида "15 Апр"
-        deadline_date = common.rus_date_convert(deadline_text.split('|')[0])
+    match_week = int(match_week)
+    # на спортс дата дедлайна в виде "15 Апр 18:00" - пока что время дедлайна не используется
+    deadline_text = td[1].text
+    # конвертируем в datetime часть даты вида "15 Апр"
+    deadline_date = common.rus_date_convert(deadline_text.split('|')[0])
 
-        # найдет все элементы с CSS тэгом "stat-table", последний - таблица с играми ближайшего тура
-        match_table = sports_fantasy_soup.find_all('table', class_='stat-table')[-1]
-        # вычисление количества матчей в туре с помощью страницы фентези команды на спортс ру
-        # в некоторых случаях данной таблицы вообще не будет на странице, например, когда дата следующего тура неясна
-        match_num = len(match_table.find_all('tr')) - 1 if match_table else 0
-        if deadline_date < date.today():
-            logging.info('{}: Нет даты дедлайна, чемпионат пропускается...'.format(current_champ))
-        elif -1 < (deadline_date - date.today()).days > daysBeforeDeadlineLimit:
-            logging.info('{}: До дедлайна больше {} дней, чемпионат пропускается...'.format(current_champ,
-                                                                                            daysBeforeDeadlineLimit))
-        elif match_num == 0:
-            logging.warning(
-                '{}: На спортс.ру не указаны матчи на ближайший тур, несмотря на то, что дедлайн близко, чемпионат пропускается...'.format(
-                    current_champ))
-        else:
-            CHAMP_LINKS[current_champ]['matchweek'] = match_week
-            CHAMP_LINKS[current_champ]['deadline_text'] = deadline_text
-            CHAMP_LINKS[current_champ]['deadline_date'] = deadline_date
-            CHAMP_LINKS[current_champ]['match_num'] = match_num
-            logging.info('{}: метаданные обработаны'.format(current_champ))
-    return
+    # найдет все элементы с CSS тэгом "stat-table", последний - таблица с играми ближайшего тура
+    match_table = sports_fantasy_soup.find_all('table', class_='stat-table')[-1]
+    # вычисление количества матчей в туре с помощью страницы фентези команды на спортс ру
+    # в некоторых случаях данной таблицы вообще не будет на странице, например, когда дата следующего тура неясна
+    match_num = len(match_table.find_all('tr')) - 1 if match_table else 0
+
+    if deadline_date < date.today():
+        logging.info('{}: Нет даты дедлайна, чемпионат пропускается...'.format(current_champ))
+        return
+    elif -1 < (deadline_date - date.today()).days > daysBeforeDeadlineLimit:
+        logging.info('{}: До дедлайна больше {} дней, чемпионат пропускается...'.format(current_champ,
+                                                                                        daysBeforeDeadlineLimit))
+        return
+    elif match_num == 0:
+        logging.warning(
+            '{}: На спортс.ру не указаны матчи на ближайший тур, несмотря на то, что дедлайн близко, чемпионат пропускается...'.format(
+                current_champ))
+        return
+    return [deadline_date, deadline_text, match_week, match_num]
 
 
 # функция для извлечения из словаря CHAMP_LINKS сразу нескольких ключей
-def get_meta(current_champ, *args):
-    return [CHAMP_LINKS[current_champ].get(x) for x in args]
+# def get_meta(current_champ, *args):
+#    return [CHAMP_LINKS[current_champ].get(x) for x in args]
 
 
+# 'prod' / 'test'
 def run_stats_update(mode='prod'):
     # иницализация excelWriter, mode='w' для полной перезаписи файла
     excel_path = EXCEL_PATHS.get(mode)
@@ -84,19 +85,17 @@ def run_stats_update(mode='prod'):
     writer = pd.ExcelWriter(excel_path, engine='openpyxl', mode='w')
     # логирование информации о времени обработки
     start_time = time.time()
+    logging.info('*' * 90)
     logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
     fantasyBot.posting_info_message(channel_id, 'Обновление коэффициентов...')
-    for current_champ in CHAMP_LINKS.keys():
-        # функция, которая обновляет данные в словаре CHAMP_LINKS: matchweek, deadline_text, deadline_date, match_num
-        update_champ_meta(current_champ)
-    logging.info('-' * 90)
     for current_champ, current_champ_links in CHAMP_LINKS.items():
+        logging.info('-' * 90)
         # фиксирование времени по каждому чемпионату
         champ_start_time = time.time()
-        deadline_date, deadline_text, matchweek, match_num = get_meta(current_champ, 'deadline_date', 'deadline_text',
-                                                                      'matchweek', 'match_num')
-        if match_num is None:
+        meta = pull_champ_meta(current_champ)
+        if meta is None:
             continue
+        deadline_date, deadline_text, matchweek, match_num = meta
         # логирование обработки каждого чемпионата
         logging.info('{}: старт обработки чемпионата...'.format(current_champ))
         # обработка и сохранение картинкой информации с Марафона
@@ -114,8 +113,8 @@ def run_stats_update(mode='prod'):
         # логирование информации о скорости обработки каждого турнира
         logging.info('{}: чемпионат обработан, время обработки: {}s'.format(current_champ,
                                                                             round(time.time() - champ_start_time, 3)))
-        logging.info('-' * 90)
     # если хотя бы одна страница была создана(хотя бы один чемпионат обработан), то перезаписываем таблицу на диске
+    logging.info('-' * 90)
     if len(writer.sheets):
         writer.save()
     fantasyBot.posting_info_message(channel_id, 'Обновление завершено')
