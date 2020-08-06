@@ -10,6 +10,9 @@ import os
 
 from configFootballLinks import CHAMP_LINKS
 
+pathWkHtmlToImage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
+imgkitConfig = imgkit.config(wkhtmltoimage=pathWkHtmlToImage)
+
 # дикта, используемая для конвертации даты
 MONTHS = {'дек': 12, 'янв': 1, 'фев': 2,
           'мар': 3, 'апр': 4, 'мая': 5,
@@ -57,10 +60,6 @@ def request_text_soup(link):
     return text, BeautifulSoup(text, 'html.parser')
 
 
-pathWkHtmlToImage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
-imgkitConfig = imgkit.config(wkhtmltoimage=pathWkHtmlToImage)
-
-
 # функция для сохранения картинок
 def save_pic(s, directory, name, flag):
     if s is None:
@@ -68,7 +67,8 @@ def save_pic(s, directory, name, flag):
     options = {'encoding': "UTF-8"}
     if flag == 'marathon':
         # дополнительные настройки для сохранения картинкой
-        options.update({'width': "450", 'height': str(24 * s.data.shape[0] + 36)})
+        options.update({'width': str(max(700, 10 * sum(s.data.apply(lambda x: max(map(lambda y: len(y), x)))))),
+                        'height': str(24 * s.data.shape[0] + 36)})
     html = s.render()
     if not os.path.isdir(directory):
         os.makedirs(directory)

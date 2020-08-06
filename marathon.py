@@ -77,7 +77,7 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     # срез только тех матчей, которые принадлежат ближайшему туру на основании матчей, указанных на спортс.ру
     match_links = matches[:match_num]
     # подсчет матожидания голов и вероятности клиншита для каждого матча - занесение всей статистики в дикту
-    week_stats = {'team': [], 'cleansheet': [], 'goals': []}
+    week_stats = {'team': [], 'cleansheet': [], 'goals': [], 'opponent': []}
     for match in match_links:
         match_link = prefixMarathon + match['link']
         _, match_soup = request_text_soup(match_link)
@@ -87,6 +87,7 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
         week_stats['team'].extend([match['home'], match['guest']])
         week_stats['cleansheet'].extend([cs_prob_home, cs_prob_away])
         week_stats['goals'].extend([expected_score_home, expected_score_away])
+        week_stats['opponent'].extend([match['guest'] + '[г]', match['home'] + '[д]'])
 
     '''
     раскрашиваем и сортируем датафрейм, чтобы получить корректную раскраску, а потом, выцепив эту раскраску,
@@ -106,14 +107,15 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     # а теперь уже готовим датафрейм, который и пойдет на выход
     df = pd.DataFrame(week_stats, index=None)
     # округления для улучшения зрительного восприятия
-    df.cleansheet = df.cleansheet.round(2)
-    df.goals = df.goals.round(1)
+    # df.cleansheet = df.cleansheet.round(2)
+    # df.goals = df.goals.round(1)
     # группировка данных по командам + форматирование данных в каждой ячейке
     df = df.groupby(df['team'], as_index=False).agg(
         {'cleansheet': lambda x: '{:.2f}'.format(sum(x)) + (' ({})'.format(
             '+'.join(map(str, map(lambda y: round(y, 2), x)))) if len(x) > 1 else ''),
          'goals': lambda x: '{:.1f}'.format(sum(x)) + (' ({})'.format(
-             '+'.join(map(str, map(lambda y: round(y, 1), x)))) if len(x) > 1 else '')})
+             '+'.join(map(str, map(lambda y: round(y, 1), x)))) if len(x) > 1 else ''),
+         'opponent': lambda x: ' + '.join(x) if len(x) > 1 else x})
     # применяем индексы, полученные в ходе сортировки числовых данных
     df = df.loc[color_df.index]
     # прячем индекс, который не нужен на выходе
