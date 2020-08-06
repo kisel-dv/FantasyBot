@@ -87,7 +87,7 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
         week_stats['team'].extend([match['home'], match['guest']])
         week_stats['cleansheet'].extend([cs_prob_home, cs_prob_away])
         week_stats['goals'].extend([expected_score_home, expected_score_away])
-        week_stats['opponent'].extend([match['guest'] + '[г]', match['home'] + '[д]'])
+        week_stats['opponent'].extend([match['guest'] + '[д]', match['home'] + '[г]'])
 
     '''
     раскрашиваем и сортируем датафрейм, чтобы получить корректную раскраску, а потом, выцепив эту раскраску,
