@@ -23,7 +23,7 @@ CHAMP_LINKS = {
                 'https://www.sports.ru/la-liga/',
                 '🇪🇸'),
     'Россия': ('https://www.marathonbet.ru/su/popular/Football/Russia/Premier+League+-+22433',
-               'https://www.sports.ru/fantasy/football/team/2089663.html',
+               'https://www.sports.ru/fantasy/football/team/2220482.html',
                'https://www.sports.ru/rfpl/',
                '🇷🇺'),
     'Италия': ('https://www.marathonbet.ru/su/popular/Football/Italy/Serie+A+-+22434',
@@ -54,11 +54,11 @@ CHAMP_LINKS = {
                'https://www.sports.ru/fantasy/football/team/2154331.html',
                'https://www.sports.ru/super-lig/',
                '🇹🇷'),
-    'Лига Чемпионов': ('',
+    'Лига Чемпионов': ('https://www.marathonbet.ru/su/popular/Football/Clubs.+International/UEFA+Champions+League+-+21255',
                        'https://www.sports.ru/fantasy/football/team/2205029.html',
                        '',
                        '🇪🇺'),
-    'Лига Европы': ('',
+    'Лига Европы': ('https://www.marathonbet.ru/su/popular/Football/Clubs.+International/UEFA+Europa+League+-+21366',
                     'https://www.sports.ru/fantasy/football/team/2206981.html',
                     '',
                     '🇪🇺')
@@ -129,6 +129,8 @@ XBET_TO_SPORTS_TEAM_MAP = {
         'Уфа': 'Уфа',
         'Арсенал Тула': 'Арсенал Тула',
         'Тамбов': 'Тамбов',
-        'Ахмат': 'Ахмат'
+        'Ахмат': 'Ахмат',
+        'Грозный': 'Ахмат',
+        'Волгоград': 'Ротор'
     }
 }
