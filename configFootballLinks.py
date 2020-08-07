@@ -69,6 +69,8 @@ for key in CHAMP_LINKS:
     k = ('marathon', 'sportsFantasy', 'sports', 'emoji')
     CHAMP_LINKS[key] = dict(zip(k, CHAMP_LINKS[key]))
 
+# количество матчей, начиная с которой мы можем использовать статистику из таблицы лиги
+MATCHES_ENOUGH_TO_USE_TABLE_STATS = 5
 
 XBET_CHAMP_NAMES = {'Корея': 'Футбол - Чемпионат Южной Кореи. 2020. Победитель',
                     'Беларусь': 'Футбол - Чемпионат Беларуси. Высшая лига. 2020. Победитель',

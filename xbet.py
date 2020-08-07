@@ -5,7 +5,8 @@ import re
 import logging
 import json
 
-from configFootballLinks import XBET_TO_SPORTS_TEAM_MAP, XBET_CHAMP_NAMES, XBET_LONG_BETS
+from configFootballLinks import XBET_TO_SPORTS_TEAM_MAP, XBET_CHAMP_NAMES, XBET_LONG_BETS, \
+    MATCHES_ENOUGH_TO_USE_TABLE_STATS
 from common import request_text_soup
 
 # путь к драйверу chrome
@@ -16,10 +17,15 @@ START_LINK = 'https://1xstavka.ru/line/Football/'
 
 
 # функция, тянущая с 1xbet коэффициенты на чемпиона первенства
-def champ_winner_probs(current_champ):
+def pull_champ_winner_probs(current_champ, matchweek):
+    if matchweek > MATCHES_ENOUGH_TO_USE_TABLE_STATS:
+        logging.info('{}: сыграно достаточно матчей, чтобы использовать табличную статистику'.format(
+            current_champ))
+        return {}
     time_start = time.time()
     link = find_xbet_link(current_champ)
     if link is None:
+        logging.warning('{}: ссылка на 1xbet данные не найдена'.format(current_champ))
         return {}
     browser = webdriver.Chrome(executable_path=chromeDriver, options=chromeOptions)
     browser.get(link)
@@ -57,13 +63,13 @@ def find_xbet_link(current_champ):
     logging.info('{}: Выгрузка ссылки на линии победителей чемпионатов с 1xbet'.format(current_champ))
     if current_champ not in XBET_LONG_BETS:
         logging.info('{}: в конфиг-файле отсутствует 1xbet-ссылка на данный чемпионат'.format(current_champ))
-        return None
+        return
     link = XBET_LONG_BETS[current_champ]
     _, soup = request_text_soup(link)
     json_events = soup.find('script', type="application/ld+json")
     if json_events is None:
         logging.warning('{}: нет событий по ссылке из конфиг-файла'.format(current_champ))
-        return None
+        return
     json_events_text = json_events.text
     list_line = json.loads(json_events_text)
     for link_meta in list_line:
@@ -72,4 +78,4 @@ def find_xbet_link(current_champ):
             logging.info('{}: ссылка на линию на чемпиона получена'.format(current_champ))
             return target_link
     logging.warning('{}: нет подходящего события'.format(current_champ))
-    return None
+    return
