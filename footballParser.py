@@ -61,8 +61,9 @@ def pull_champ_meta(current_champ):
         logging.info('{}: Нет даты дедлайна, чемпионат пропускается...'.format(current_champ))
         return
     elif -1 < (deadline_date - date.today()).days > daysBeforeDeadlineLimit:
-        logging.info('{}: До дедлайна больше {} дней, чемпионат пропускается...'.format(current_champ,
-                                                                                        daysBeforeDeadlineLimit))
+        logging.info('{}: До дедлайна({}) больше {} дней, чемпионат пропускается...'.format(current_champ,
+                                                                                            deadline_date,
+                                                                                            daysBeforeDeadlineLimit))
         return
     elif match_num == 0:
         logging.warning(
@@ -124,5 +125,5 @@ def run_stats_update(mode='prod'):
 
 
 if __name__ == '__main__':
-    run_stats_update('test')
-    #run_stats_update('prod')
+    #run_stats_update('test')
+    run_stats_update('prod')
