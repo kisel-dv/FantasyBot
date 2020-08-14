@@ -88,7 +88,6 @@ def run_stats_update(mode='prod'):
     start_time = time.time()
     logging.info('*' * 90)
     logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
-    fantasyBot.posting_info_message(channel_id, 'Обновление коэффициентов...')
     for current_champ, current_champ_links in CHAMP_LINKS.items():
         # фиксирование времени по каждому чемпионату
         champ_start_time = time.time()
@@ -118,7 +117,6 @@ def run_stats_update(mode='prod'):
     logging.info('-' * 90)
     if len(writer.sheets):
         writer.save()
-    fantasyBot.posting_info_message(channel_id, 'Обновление завершено')
     # логирование информации о полном времени
     logging.info('Тур обработан, время обработки: {}s'.format(round(time.time() - start_time, 3)))
     logging.info('_' * 90)

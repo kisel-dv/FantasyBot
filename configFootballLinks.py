@@ -35,7 +35,7 @@ CHAMP_LINKS = {
                  'https://www.sports.ru/bundesliga/',
                  '🇩🇪'),
     'Франция': ('',
-                'https://www.sports.ru/fantasy/football/team/2112406.html',
+                'https://www.sports.ru/fantasy/football/team/2230412.html',
                 'https://www.sports.ru/ligue-1/',
                 '🇫🇷'),
     'Нидерланды': ('',
