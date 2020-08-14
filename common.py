@@ -7,6 +7,8 @@ from datetime import date, datetime
 import imgkit
 import logging
 import os
+import json
+import pandas as pd
 
 from configFootballLinks import CHAMP_LINKS
 
@@ -92,3 +94,24 @@ def save_stats_excel(writer, champ, marathon, calendar):
         calendar.to_excel(writer, sheet_name=champ, startrow=marathon.data.shape[0] + 5, startcol=0)
     logging.info('{}: информация в excel обновлена'.format(champ))
     return
+
+
+def save_json(j, path):
+    with open(path, 'w', encoding='UTF-8') as f:
+        json.dump(j, f)
+
+
+def save_xlsx(dfs, filepath):
+    writer = pd.ExcelWriter(filepath, engine='xlsxwriter')
+    for sheetname, df in dfs.items():  # loop through `dict` of dataframes
+        df.to_excel(writer, sheet_name=sheetname, index=False)  # send df to writer
+        worksheet = writer.sheets[sheetname]  # pull worksheet object
+        for idx, col in enumerate(df):  # loop through all columns
+            series = df[col]
+            max_len = max((
+                series.astype(str).map(len).max(),  # len of largest item
+                len(str(series.name))  # len of column name/header
+            )) + 1  # adding a little extra space
+            worksheet.set_column(idx, idx, max_len)  # set column width
+    writer.save()
+
