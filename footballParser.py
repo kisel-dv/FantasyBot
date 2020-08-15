@@ -70,6 +70,7 @@ def pull_champ_meta(current_champ):
             '{}: На спортс.ру не указаны матчи на ближайший тур, несмотря на то, что дедлайн близко, чемпионат пропускается...'.format(
                 current_champ))
         return
+    logging.info('{}: Метаданные обработаны'.format(current_champ))
     return [deadline_date, deadline_text, match_week, match_num]
 
 

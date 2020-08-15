@@ -116,6 +116,13 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
                             'guest': guest_team.strip()})
     # срез только тех матчей, которые принадлежат ближайшему туру на основании метаданных тура
     match_links = matches[:match_num]
+    # обработка возможных исключений
+    if not match_links:
+        logging.error('{}: На марафоне не обнаружено матчей'.format(current_champ))
+        return
+    if len(match_links) != match_num:
+        logging.warning('{}: На марафоне обнаружено меньше матчей, чем ожидалось'.format(current_champ))
+
     # подсчет матожидания голов и вероятности клиншита для каждого матча - занесение всей статистики в дикту
     week_stats = {'team': [], 'cleansheet': [], 'goals': [], 'opponent': []}
     for match in match_links:

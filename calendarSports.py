@@ -59,7 +59,7 @@ def get_first_matches(matches, n):
 def get_champ_calendar(current_champ, current_champ_link, team_links):
     champ_calendar_dict = {}
     for team, team_link in team_links.items():
-        team_link = team_link + 'calendar'
+        team_link = team_link + 'calendar/'
         # запрос страницы с календарем для каждой команды
         ''' (в теории можно обрабатывать через календарь соревнования)
         (НО - на спортс в таком случае не обязательна сортировка по дате 
