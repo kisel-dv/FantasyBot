@@ -5,7 +5,6 @@ from math import log
 
 from common import request_text_soup
 from xbet import pull_champ_winner_probs
-from configFootballLinks import MATCHES_ENOUGH_TO_USE_TABLE_STATS
 
 
 # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
@@ -16,7 +15,7 @@ sideMap = {'В гостях': '(г)',
            'Дома': '(д)'}
 
 
-def table_processing(current_champ, champ_link, matchweek):
+def table_processing(current_champ, champ_link):
     table_link = champ_link + 'table/'
     # получаем страницу с таблицей обрабатываемого чемпионата
     _, table_soup = request_text_soup(table_link)
@@ -32,15 +31,14 @@ def table_processing(current_champ, champ_link, matchweek):
         team_name = team.find('a', class_='name').get('title')
         team_links[team_name] = team.find('a', class_='name').get('href')
         # если тур больше данной константы - обрабатываем численную статистику из таблицы - в противном случае будет {}
-        if matchweek > MATCHES_ENOUGH_TO_USE_TABLE_STATS:
-            team_numbers = team.find_all('td', class_=None)
-            for j, n in enumerate(team_numbers):
-                team_numbers[j] = int(n.text)
-            stats[team_name] = dict(zip(table_columns, team_numbers))
-            stats[team_name]['avg_g_scored'] = stats[team_name]['g_scored'] / stats[team_name][
-                'games'] if stats[team_name]['games'] else 0
-            stats[team_name]['avg_g_against'] = stats[team_name]['g_against'] / stats[team_name][
-                'games'] if stats[team_name]['games'] else 0
+        team_numbers = team.find_all('td', class_=None)
+        for j, n in enumerate(team_numbers):
+            team_numbers[j] = int(n.text)
+        stats[team_name] = dict(zip(table_columns, team_numbers))
+        stats[team_name]['avg_g_scored'] = stats[team_name]['g_scored'] / stats[team_name][
+            'games'] if stats[team_name]['games'] else 0
+        stats[team_name]['avg_g_against'] = stats[team_name]['g_against'] / stats[team_name][
+            'games'] if stats[team_name]['games'] else 0
     # транспонируем этот словарь, чтобы иметь доступ в другом порядке
     # (вместо team_name -> games -> 5 получаем games -> team_name -> 5)
     # для случая, когда мы не хотим обрабатывать таблицу из-за малого количества туров, получим {}
@@ -172,20 +170,25 @@ def calendar_processing(current_champ, current_champ_links, matchweek):
     champ_start_time = time.time()
     current_champ_link = current_champ_links['sports']
     if not current_champ_link:
-        logging.warning('Для данного чемпионата календарь недоступен, обработка календаря пропускается...')
+        logging.warning(current_champ +
+                        ': Для данного чемпионата календарь недоступен, обработка календаря пропускается...')
         return
     # обработка таблицы: table stats - dict anyway
-    team_links, table_stats = table_processing(current_champ, current_champ_link, matchweek)
+    team_links, table_stats = table_processing(current_champ, current_champ_link)
     # обработка букмекерской линии на победителя чемпионата: champion_probs - dict anyway
     champion_probs = pull_champ_winner_probs(current_champ, matchweek)
     # обработка календаря
     champ_calendar = get_champ_calendar(current_champ, current_champ_link, team_links)
 
+    # бывают случаи, когда 1хбет дает не полную линию - не для всех команд
+    if len(champion_probs) == len(table_stats['games']):
+        logging.warning('{}: Линия на победителя чемпионата неполная'.format(current_champ))
+        champion_probs = {}
     # оформление и сохранение (если tableStats и championProbs пустые, то без оформления)
-    if table_stats:
-        champ_calendar = styling_calendar(champ_calendar, 'table', table_stats)
-    elif champion_probs:
+    if champion_probs:
         champ_calendar = styling_calendar(champ_calendar, 'champion', champion_probs)
+    elif table_stats:
+        champ_calendar = styling_calendar(champ_calendar, 'table', table_stats)
     else:
         champ_calendar = champ_calendar.style
 
