@@ -2,6 +2,7 @@
 .git/
 venv/
 pics/
+data/
 __pycache__/
 log/
 creds/

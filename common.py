@@ -55,7 +55,7 @@ def get_champ_stats_caption(champ, deadline, deadline_date):
 
 
 # функция для обработки каждой страницы, возвращает пару (текст страницы, soup объект)
-def request_text_soup(link):
+def request_text_soup(link, **kwargs):
     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"}
     req = urllib.request.urlopen(urllib.request.Request(link, headers=headers))
     if link == req.geturl():
@@ -63,6 +63,8 @@ def request_text_soup(link):
     else:
         logging.error('При обработке ссылки произошла переадресация на другой адрес')
         text = ''
+    if 'func' in kwargs:
+        text = kwargs['func'](text)
     return text, BeautifulSoup(text, 'html.parser')
 
 
