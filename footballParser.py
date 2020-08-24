@@ -80,7 +80,7 @@ def pull_champ_meta(current_champ):
 
 
 # 'prod' / 'test'
-def run_stats_update(mode='prod'):
+def run_stats_update(mode='prod', champs=[]):
     # иницализация excelWriter, mode='w' для полной перезаписи файла
     excel_path = EXCEL_PATHS.get(mode)
     channel_id = CHANNELS.get(mode)
@@ -90,6 +90,9 @@ def run_stats_update(mode='prod'):
     logging.info('*' * 90)
     logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
     for current_champ, current_champ_links in CHAMP_LINKS.items():
+        # если указаны конкретные чемпионаты для обработки - обработать только их - ВАЖНО: в excel тоже будут ТОЛЬКО они
+        if champs and current_champ not in champs:
+            continue
         # фиксирование времени по каждому чемпионату
         champ_start_time = time.time()
         logging.info('-' * 90)
