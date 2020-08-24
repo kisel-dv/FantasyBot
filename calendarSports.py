@@ -181,7 +181,7 @@ def calendar_processing(current_champ, current_champ_links, matchweek):
     champ_calendar = get_champ_calendar(current_champ, current_champ_link, team_links)
 
     # бывают случаи, когда 1хбет дает не полную линию - не для всех команд
-    if len(champion_probs) == len(table_stats['games']):
+    if len(champion_probs) != len(table_stats['games']):
         logging.warning('{}: Линия на победителя чемпионата неполная'.format(current_champ))
         champion_probs = {}
     # оформление и сохранение (если tableStats и championProbs пустые, то без оформления)
