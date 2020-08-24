@@ -69,6 +69,7 @@ def update_mapping_h2h():
         mapping = pd.DataFrame(columns=['understat', 'sports'])
 
     resolved = resolved[~resolved['understat'].isin(mapping['understat'])]
+    unresolved = unresolved[~unresolved['understat'].isin(mapping['understat'])]
     # присоединение к существующему маппингу новых элементов
     mapping = mapping.append(resolved)
     # сохранение обновленных файлов - дополненного маппинга и сокращенного списка неразрешенных соотеошений
