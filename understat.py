@@ -22,14 +22,22 @@ COMMON_COLUMNS = ['games', 'time', 'goals', 'assists',
                   'xG', 'xA',
                   'shots', 'key_passes']
 
+EXCEPT_COLUMNS = ['games_latest']
+
 POSTFIXES = ['', '_latest', '_relevant']
 
-TARGET_COLUMNS = ['Имя', 'Клуб', 'Амплуа', '$', 'position_latest', 'position_relevant', 'position'] + \
-                 [a + b for b in POSTFIXES for a in COMMON_COLUMNS]
+TARGET_COLUMNS = ['Имя', 'Клуб', 'Амплуа', '$', 'position_latest', 'position_relevant'] + \
+                 [a + b for b in POSTFIXES for a in COMMON_COLUMNS if a + b not in EXCEPT_COLUMNS]
 
 
-# understatLeagues = ["RFPL", "EPL", "La_Liga", "Bundesliga", "Serie_A", "Ligue_1"]
-UNDERSTAT_LEAGUES = {'Россия': 'RFPL'}
+UNDERSTAT_LEAGUES = {'Россия': 'RFPL',
+                     'Англия': 'EPL',
+                     'Испания': 'La_Liga',
+                     'Германия': 'Bundesliga',
+                     'Италия': 'Serie_A',
+                     'Франция': 'Ligue_1'}
+
+#UNDERSTAT_LEAGUES = {'Россия': 'RFPL'}
 UNDERSTAT_SEASONS = ["2020"]
 
 
@@ -98,6 +106,8 @@ def pull_understat():
     missing_ids = []
 
     for current_champ, understat_name in UNDERSTAT_LEAGUES.items():
+        if current_champ not in ['Россия', 'Франция']:
+            continue
         for year in UNDERSTAT_SEASONS:
             # TODO КЭШИРОВАНИЕ - КАК МИНИМУМ, КАЛЕНДАРЯ, КОТИРОВОК НА ЧЕМПИОНСТВО, АНДЕРСТАТ ДАННЫХ
             print("Collecting {}/{}...".format(understat_name, year))
@@ -169,6 +179,7 @@ def pull_understat():
             # добавление связи с h2h данными - через маппинг ссылок на игроков
             full_stats['sports_id'] = full_stats['id'].apply(lambda x: h2h_m.get(x))
 
+            # TODO ДЖОЙН В ДРУГУЮ СТОРОНУ?
             # и подтягиваем метаинформацию с h2h - позицию, цену
             players_meta = pd.read_excel(r'C:/Users/Dmitry/PycharmProjects/FantasyBot/data/h2h/{}.xlsx'.format(
                 current_champ))
@@ -188,7 +199,7 @@ def pull_understat():
 
 
 if __name__ == '__main__':
-    # TODO учесть, что может выйти так, что в этот момент файл синхронизируется
+    # TODO СВЯЗАТЬ С ОБНОВЛЕНИЕМ Н2Н?
     # обновление маппингов перед запуском апдейта understat статистики
     update_mapping_h2h()
     # обновление статистики

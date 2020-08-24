@@ -1,17 +1,15 @@
-import urllib.request
 import json
-from bs4 import BeautifulSoup
 import pandas as pd
 import os
 
 from common import save_xlsx, request_text_soup
 
 h2h_links = {'Россия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/179',
-             'Франция': '',
-             'Германия': '',
-             'Испания': '',
-             'Англия': '',
-             'Италия': ''}
+             'Франция': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/180',
+             'Германия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/161',
+             'Испания': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/162',
+             'Англия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/159',
+             'Италия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/164'}
 
 suffix = "?filter%5Bamplua_id%5D=0&filter%5Bsport_team_id%5D=0&filter%5Bname%5D=&filter%5Bteam_keyword%5D=&filter%5Bpopularity_index%5D=&filter%5Blast_price%5D=0%3B3200&sort%5Bpoints%5D=desc&offset={}&ajax=1"
 threshold = 100
