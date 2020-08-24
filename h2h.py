@@ -2,7 +2,7 @@ import json
 import pandas as pd
 import os
 
-from common import save_xlsx, request_text_soup
+from common import save_dfs_to_xlsx, request_text_soup
 
 h2h_links = {'Россия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/179',
              'Франция': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/180',
@@ -27,7 +27,7 @@ def update_h2h():
         # cycle to pull all data - in every update we are getting some numbers of players
         keys = []
         player_data = []
-        while offset == 0 or len(all_players):
+        while True:
             _, soup = request_text_soup(link.format(offset), func=lambda x: json.loads(x)['data'])
             # getting keys
             if offset == 0:
@@ -36,16 +36,17 @@ def update_h2h():
 
             all_players = soup.find_all('tr')[2:]
             # if no update available with new offset - we just skip this step and next go out from cycle
-            if len(all_players):
-                # if any updates available - parse every available cell
-                for player in all_players:
-                    cells = player.find_all('td')
-                    p = []
-                    for i, t in enumerate(cells):
-                        p.append(t.text.strip())
-                    # link hack - "переобработка для последнего" - берем только айди, либо текстовый айди
-                    p[-1] = t.find('a', title="Профиль игрока").get('href').strip().split('/')[-2]
-                    player_data.append(p)
+            if not all_players:
+                break
+            # if any updates available - parse every available cell
+            for player in all_players:
+                cells = player.find_all('td')
+                p = []
+                for i, t in enumerate(cells):
+                    p.append(t.text.strip())
+                # link hack - "переобработка для последнего" - берем только айди, либо текстовый айди
+                p[-1] = t.find('a', title="Профиль игрока").get('href').strip().split('/')[-2]
+                player_data.append(p)
 
             offset = offset + threshold
 
@@ -63,7 +64,7 @@ def update_h2h():
         if not os.path.isdir(directory):
             os.makedirs(directory)
         path = directory + current_champ + ".xlsx"
-        save_xlsx(dfs, path)
+        save_dfs_to_xlsx(dfs, path)
 
 
 if __name__ == '__main__':

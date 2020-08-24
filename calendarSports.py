@@ -8,11 +8,17 @@ from xbet import pull_champ_winner_probs
 
 
 # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
-typoMap = {'Маритиму': 'Маритиму Мадейра',
-           'Санта-Клара': 'Санта Клара'}
-# сокращение "В гостях" или "Дома" до простых "(д)" и "(г)"
-sideMap = {'В гостях': '(г)',
-           'Дома': '(д)'}
+# (профиль->таблица)
+SPORTS_CLUB_MAP = {'Маритиму': 'Маритиму Мадейра',
+                   'Санта-Клара': 'Санта Клара'}
+
+SIDE_MAP = {'В гостях': '(г)',
+            'Дома': '(д)'}
+
+# среднее преимущество домашнего поля, основанное на исторической статистике
+HOME_ADVANTAGE = 0.4
+SPORTS_TABLE_COLS = ['games', 'won', 'draw', 'lost', 'g_scored', 'g_against', 'points']
+GAMES_IN_CALENDAR = 5
 
 
 def table_processing(current_champ, champ_link):
@@ -22,8 +28,7 @@ def table_processing(current_champ, champ_link):
     # выделение таблицы со страницы
     table_body = table_soup.find('tbody')
     team_body_list = table_body.find_all('tr')
-    # колонки футбольных таблиц на sports.ru - численные атрибуты каждой команды
-    table_columns = ['games', 'won', 'draw', 'lost', 'g_scored', 'g_against', 'points']
+
     team_links = {}
     stats = {}
     # для каждой команды из таблицы сохраним ссылку на профиль команды, все численные атрибуты
@@ -33,12 +38,12 @@ def table_processing(current_champ, champ_link):
         # если тур больше данной константы - обрабатываем численную статистику из таблицы - в противном случае будет {}
         team_numbers = team.find_all('td', class_=None)
         for j, n in enumerate(team_numbers):
+            # для каждой команды обрабатываем каждое число-статистику из таблицы
             team_numbers[j] = int(n.text)
-        stats[team_name] = dict(zip(table_columns, team_numbers))
-        stats[team_name]['avg_g_scored'] = stats[team_name]['g_scored'] / stats[team_name][
-            'games'] if stats[team_name]['games'] else 0
-        stats[team_name]['avg_g_against'] = stats[team_name]['g_against'] / stats[team_name][
-            'games'] if stats[team_name]['games'] else 0
+        team_stats = dict(zip(SPORTS_TABLE_COLS, team_numbers))
+        team_stats['avg_g_scored'] = team_stats['g_scored'] / team_stats['games'] if team_stats['games'] else 0
+        team_stats['avg_g_against'] = team_stats['g_against'] / team_stats['games'] if team_stats['games'] else 0
+        stats[team_name] = team_stats
     # транспонируем этот словарь, чтобы иметь доступ в другом порядке
     # (вместо team_name -> games -> 5 получаем games -> team_name -> 5)
     # для случая, когда мы не хотим обрабатывать таблицу из-за малого количества туров, получим {}
@@ -54,6 +59,7 @@ def get_first_matches(matches, n):
     return [matches[x] for x in range(m)] + ['' for _ in range(n - m)]
 
 
+# TODO: реворк обработки календаря чтобы лучше ловить спарки
 def get_champ_calendar(current_champ, current_champ_link, team_links):
     champ_calendar_dict = {}
     for team, team_link in team_links.items():
@@ -73,13 +79,14 @@ def get_champ_calendar(current_champ, current_champ_link, team_links):
         results = []
         for match in match_team_list:
             # убираем из рассмотрения матчи с пометкой "перенесен" вместо даты
-            if 'перенесен' not in str(match):
-                date = match.find('a').text.split('|')[0].strip()
-                opponent = match.find_all('div')[1].text.strip()
-                side = sideMap[match.find('td', class_='alRight padR20').text]
-                events.append(date + ' ' + opponent + side)
-                results.append(match.find('a', class_='score').text.strip())
-                competitions.append(match.div.a.get('href'))
+            if 'перенесен' in str(match):
+                continue
+            date = match.find('a').text.split('|')[0].strip()
+            opponent = match.find_all('div')[1].text.strip()
+            side = SIDE_MAP[match.find('td', class_='alRight padR20').text]
+            events.append(date + ' ' + opponent + side)
+            results.append(match.find('a', class_='score').text.strip())
+            competitions.append(match.div.a.get('href'))
 
         # выделение календаря будущих игр - их мы находим по наличию ссылки на превью вместо счета
         future_index = results.index('превью') if 'превью' in results else len(results)
@@ -89,27 +96,28 @@ def get_champ_calendar(current_champ, current_champ_link, team_links):
         future_team_calendar_champ = [events[idx]
                                       for idx, elem in enumerate(competitions)
                                       if current_champ_link in elem and idx >= future_index]
-        # взятие ближайших 5 игр для каждой команды
-        champ_calendar_dict[team] = dict(
-            zip(['1', '2', '3', '4', '5'], get_first_matches(future_team_calendar_champ, 5)))
+        # взятие ближайших N игр для каждой команды
+        champ_calendar_dict[team] = dict(zip([str(i) for i in range(GAMES_IN_CALENDAR)],
+                                             get_first_matches(future_team_calendar_champ, GAMES_IN_CALENDAR)))
     # транспонирование таблицы
     champ_calendar = pd.DataFrame(champ_calendar_dict).transpose()
+    logging.info('{}: календарь чемпионата собран'.format(current_champ))
     return champ_calendar
 
 
 # функция для вычисления сложности календаря на основе средней статистики за текущее первенство
-def diff_table(t1, t2, side, stats_data):
+def difficulty_table(t1, t2, side, stats_data):
     # поправка на место проведения игры - высчитана средняя в среднем для крупных европейских чемпионатов
-    side_eff = 0.4 * ((side == '(д)') - (side == '(г)'))
+    side_eff = HOME_ADVANTAGE * ((side == '(д)') - (side == '(г)'))
     # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
-    if typoMap.get(t2):
-        t2 = typoMap[t2]
+    if SPORTS_CLUB_MAP.get(t2):
+        t2 = SPORTS_CLUB_MAP[t2]
     # tableStats - глобальный, для доступа к переменной из основной функции обработки
     try:
-        diff = (stats_data['avg_g_scored'][t1] - stats_data['avg_g_against'][t1]) - (
-                stats_data['avg_g_scored'][t2] - stats_data['avg_g_against'][t2])
-        diff = side_eff + round(diff, 2)
-        return diff
+        difficulty = (stats_data['avg_g_scored'][t1] - stats_data['avg_g_against'][t1]) - \
+                     (stats_data['avg_g_scored'][t2] - stats_data['avg_g_against'][t2])
+        difficulty = side_eff + round(difficulty, 2)
+        return difficulty
     except KeyError:
         # если нашлась новая проблема с разными названиями в разных местах на спортс ру
         logging.error('Неизвестный клуб, матч {} - {}'.format(t1, t2))
@@ -124,7 +132,7 @@ def difficulty_probs(t1, t2, side, stats_data):
     return ((side == '(д)') - (side == '(г)')) * diff
 
 
-diff_funcs = {'table': diff_table,
+DIFF_FUNCS = {'table': difficulty_table,
               'champion': difficulty_probs}
 
 
@@ -133,7 +141,7 @@ def get_color(x):
     if x < -0.8:
         color = 'background-color: #CC0000'
     elif (x >= -0.8) and (x <= -0.3):
-        color = 'background-color: #fd7702'
+        color = 'background-color: #FD7702'
     elif (x >= -0.3) and (x <= 0.4):
         color = 'background-color: #FFFF19'
     elif (x >= 0.4) and (x <= 1):
@@ -143,8 +151,9 @@ def get_color(x):
     return color
 
 
-def coloring_calendar(value, color_func, stats_data):
+def coloring_calendar(value, diff_func, stats_data):
     par = []
+    # из-за предобработки придет либо пустая строка, либо строка в формате 'dd.mm.yyyy <opponent>(s)', s - side
     for i, op in enumerate(value):
         if op == '':
             diff = 0
@@ -152,15 +161,14 @@ def coloring_calendar(value, color_func, stats_data):
             side_match = op[-3:]
             # первые 10 символов - дата в формете dd.mm.yyyy, последние 3 - сторона в формате (д)/(г)
             op = op[10:-3].strip()
-            diff = color_func(value.index[i], op, side_match, stats_data)
+            diff = diff_func(value.index[i], op, side_match, stats_data)
         par.append(get_color(diff))
     return par
 
 
-# функция для стайлинга - раскраски таблицы
 def styling_calendar(calendar, mode, stats_data):
-    color_func = diff_funcs[mode]
-    calendar_colored = calendar.style.apply(lambda x: coloring_calendar(x, color_func, stats_data))
+    diff_func = DIFF_FUNCS[mode]
+    calendar_colored = calendar.style.apply(lambda x: coloring_calendar(x, diff_func, stats_data))
     return calendar_colored
 
 
@@ -170,8 +178,7 @@ def calendar_processing(current_champ, current_champ_links, matchweek):
     champ_start_time = time.time()
     current_champ_link = current_champ_links['sports']
     if not current_champ_link:
-        logging.warning(current_champ +
-                        ': Для данного чемпионата календарь недоступен, обработка календаря пропускается...')
+        logging.warning('{}: Пустая ссылка на календарь, обработка календаря пропускается...'.format(current_champ))
         return
     # обработка таблицы: table stats - dict anyway
     team_links, table_stats = table_processing(current_champ, current_champ_link)
@@ -193,6 +200,6 @@ def calendar_processing(current_champ, current_champ_links, matchweek):
         champ_calendar = champ_calendar.style
 
     # логирование времени обработки каждого чемпионата
-    logging.info('{}: календарь чемпионата обработан, время обработки: {}s'.format(current_champ, round(
-        time.time() - champ_start_time, 3)))
+    logging.info('{}: календарь чемпионата обработан за время: {}s'.format(current_champ,
+                                                                           round(time.time() - champ_start_time, 3)))
     return champ_calendar

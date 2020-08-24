@@ -1,18 +1,22 @@
 import telebot
-from telebot.types import InputMediaPhoto
-from contextlib import ExitStack
 import logging
 import time
+from telebot.types import InputMediaPhoto
+from contextlib import ExitStack
 
-from config import TOKEN, PROXY_LIST, CHANNELS
+from config import TOKEN, PROXY_LIST, TG_CHANNELS
+
+
+CONNECTION_ESTABLISHMENT_NUMBER = 3
+SENDING_ATTEMPTS_NUMBER = 5
 
 
 def check_proxy():
     bot = telebot.TeleBot(TOKEN)
-    self_chat_id = CHANNELS.get('self')
+    self_chat_id = TG_CHANNELS.get('self')
     for current_proxy in range(len(PROXY_LIST)):
         telebot.apihelper.proxy = {'https': PROXY_LIST[current_proxy]}
-        for i in range(3):
+        for i in range(CONNECTION_ESTABLISHMENT_NUMBER):
             try:
                 bot.send_message(self_chat_id, 'Прокси #{}'.format(current_proxy))
                 logging.info('Установлено соединение с помощью прокси #{}, попытка {}'.format(current_proxy, i + 1))
@@ -32,7 +36,7 @@ def safety_send_group(channel_id, media, proxy=False):
     if proxy:
         working_proxy = check_proxy()
         telebot.apihelper.proxy = {'https': working_proxy}
-    for i in range(5):
+    for i in range(SENDING_ATTEMPTS_NUMBER):
         try:
             bot.send_media_group(channel_id, media)
             logging.info('Статистика по чемпионату отправлена в канал')

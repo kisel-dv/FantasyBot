@@ -1,23 +1,21 @@
 """
 Единая точка входа - отсюда для каждого чемпионата вызываются marathon_processing и calendar_processing функции
 """
+import pandas as pd
 import time
 from datetime import date
 import logging
-import pandas as pd
 
-import marathon
 import calendarSports
 import common
-from configFootballLinks import CHAMP_LINKS
-from config import MARATHON_DIR, CALENDAR_DIR, CHANNELS, EXCEL_PATHS
 import fantasyBot
+import marathon
+from configFootballLinks import CHAMP_LINKS
+from config import MARATHON_DIR, CALENDAR_DIR, TG_CHANNELS, EXCEL_PATHS
 
 
-logging.basicConfig(filename='log/{}.log'.format(date.today()), level=logging.INFO,
-                    format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
-
-daysBeforeDeadlineLimit = 2
+# на сколько дней нужно смотреть вперед в поиске дедлайнов
+DAYS_BEFORE_DEADLINE = 2
 
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
@@ -60,15 +58,13 @@ def pull_champ_meta(current_champ):
     if deadline_date < date.today():
         logging.info('{}: Нет даты дедлайна, чемпионат пропускается...'.format(current_champ))
         return
-    elif -1 < (deadline_date - date.today()).days > daysBeforeDeadlineLimit:
+    elif -1 < (deadline_date - date.today()).days > DAYS_BEFORE_DEADLINE:
         logging.info('{}: До дедлайна({}) больше {} дней, чемпионат пропускается...'.format(current_champ,
                                                                                             deadline_date,
-                                                                                            daysBeforeDeadlineLimit))
+                                                                                            DAYS_BEFORE_DEADLINE))
         return
     elif match_num == 0:
-        logging.warning(
-            '{}: На спортс.ру не указаны матчи на ближайший тур, несмотря на то, что дедлайн близко, чемпионат пропускается...'.format(
-                current_champ))
+        logging.warning('{}: На спортс.ру не указаны матчи на ближайший тур'.format(current_champ))
         return
     logging.info('{}: Метаданные обработаны'.format(current_champ))
     return [deadline_date, deadline_text, match_week, match_num]
@@ -80,24 +76,23 @@ def pull_champ_meta(current_champ):
 
 
 # 'prod' / 'test'
-def run_stats_update(mode='prod', champs=[]):
+def run_stats_update(mode='prod', champs=None):
     # иницализация excelWriter, mode='w' для полной перезаписи файла
     excel_path = EXCEL_PATHS.get(mode)
-    channel_id = CHANNELS.get(mode)
+    channel_id = TG_CHANNELS.get(mode)
     writer = pd.ExcelWriter(excel_path, engine='openpyxl', mode='w')
     # логирование информации о времени обработки
     start_time = time.time()
     logging.info('*' * 90)
     logging.info('*' * 37 + 'Начало обработки' + '*' * 37)
-    for current_champ, current_champ_links in CHAMP_LINKS.items():
-        # если указаны конкретные чемпионаты для обработки - обработать только их - ВАЖНО: в excel тоже будут ТОЛЬКО они
-        if champs and current_champ not in champs:
-            continue
+    target_champs = CHAMP_LINKS.keys() if champs is None else [x for x in champs if x in CHAMP_LINKS]
+    for current_champ in target_champs:
         # фиксирование времени по каждому чемпионату
         champ_start_time = time.time()
         logging.info('-' * 90)
         logging.info('{}: старт обработки чемпионата...'.format(current_champ))
         # обработка метаданных со спортс.ру
+        current_champ_links = CHAMP_LINKS[current_champ]
         meta = pull_champ_meta(current_champ)
         if meta is None:
             continue
@@ -112,7 +107,7 @@ def run_stats_update(mode='prod', champs=[]):
         post_caption = common.get_champ_stats_caption(current_champ, deadline_text, deadline_date)
         fantasyBot.posting_to_channel(channel_id, post_caption, path_marathon, path_calendar)
         # апдейт страницы в таблице
-        common.save_stats_excel(writer, current_champ, styled_marathon, styled_calendar)
+        common.save_stats_to_excel(writer, current_champ, styled_marathon, styled_calendar)
 
         # логирование информации о скорости обработки каждого турнира
         logging.info('{}: чемпионат обработан, время обработки: {}s'.format(current_champ,
@@ -127,5 +122,8 @@ def run_stats_update(mode='prod', champs=[]):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(filename='log/{}.log'.format(date.today()),
+                        level=logging.INFO,
+                        format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
     #run_stats_update('test')
     run_stats_update('prod')

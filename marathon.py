@@ -6,19 +6,20 @@ import logging
 
 from common import rus_date_convert, request_text_soup
 
-# выделение ссылок для каждого матча из доступной линии
-prefixMarathon = 'https://www.marathonbet.ru/su/betting/'
+PREFIX_MARATHON = 'https://www.marathonbet.ru/su/betting/'
 
 # задание констант, описывающих маржу букмекера - для конвертации коэффициентов в вероятность
-margeMarathon = 0.01
-multiplierMarathon = 1/(1 + margeMarathon)
+MARGIN_MARATHON = 0.01
+MULTIPLIER_MARATHON = 1/(1 + MARGIN_MARATHON)
 
 
 # функция для подсчета вероятности клиншитов и матожиданий забитых голов
 def score_cleansheet_expected(team, match_soup):
     # коэффициенты по событиям типа "первая/вторая команда забьет больше x.5 голов"
-    goals_over_prices = match_soup.find_all('span', attrs={'data-prt': 'CP', 'data-selection-key': re.compile(
-        r'\d*@Total_Goals_\(' + team + r'_Team\)\d?\.Over_\d\.5')})
+    goals_over_prices = match_soup.find_all('span', attrs={'data-prt': 'CP',
+                                                           'data-selection-key': re.compile(r'\d*@Total_Goals_\(' +
+                                                                                            team +
+                                                                                            r'_Team\)\d?\.Over_\d\.5')})
     # обработка
     score = 0
     addition = 0
@@ -27,17 +28,18 @@ def score_cleansheet_expected(team, match_soup):
         if goals != '1.5' and score == 0:
             # если в линии не было события вида тотал больше 1.5, считаем, что вероятность забить больше 1.5 равна 1
             score = float(goals) - 1.5
-        addition = multiplierMarathon / float(goal_price.text)
+        addition = MULTIPLIER_MARATHON / float(goal_price.text)
         score += addition
     # коэффициенты по событиям типа "первая/вторая команда забьет/не забьет"
-    cs_prices = match_soup.find_all('span', attrs={'data-prt': 'CP', 'data-selection-key': re.compile(
-        r'\d*@' + team + r'_Team_To_Score\.(yes|no)')})
+    cs_prices = match_soup.find_all('span', attrs={'data-prt': 'CP',
+                                                   'data-selection-key': re.compile(r'\d*@' + team +
+                                                                                    r'_Team_To_Score\.(yes|no)')})
     cs = 0.01
     addition_0 = 1  # больше 0.5 голов
     # обработка найденных по шаблону событий
     for cs_price in cs_prices:
         outcome = cs_price.get('data-selection-key')[-2:]
-        c = multiplierMarathon / float(cs_price.text)
+        c = MULTIPLIER_MARATHON / float(cs_price.text)
         # для события "команда не забьет" - записываем вероятность в сухой матч для соперника
         # для события "команда забьет" - получаем вероятность, которую нужно просуммировать с полученной ранее суммой
         # при этом, в линии может не существовать данных событий - в таком случае будут использованы дефолтные значения
@@ -126,7 +128,7 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     # подсчет матожидания голов и вероятности клиншита для каждого матча - занесение всей статистики в дикту
     week_stats = {'team': [], 'cleansheet': [], 'goals': [], 'opponent': []}
     for match in match_links:
-        match_link = prefixMarathon + match['link']
+        match_link = PREFIX_MARATHON + match['link']
         _, match_soup = request_text_soup(match_link)
         expected_score_home, cs_prob_away = score_cleansheet_expected('First', match_soup)
         expected_score_away, cs_prob_home = score_cleansheet_expected('Second', match_soup)
@@ -144,6 +146,6 @@ def marathon_processing(current_champ, current_champ_links, deadline_date, match
     color_scheme, team_order = get_style_params(week_stats)
     s = set_style(week_stats, color_scheme, team_order)
     # логирование информации о скорости обработки каждого турнира
-    logging.info('{}: линия марафон обработана, время обработки: {}s'.format(current_champ, round(
-        time.time() - champ_start_time, 3)))
+    logging.info('{}: линия марафон обработана, время обработки: {}s'.format(current_champ,
+                                                                             round(time.time() - champ_start_time, 3)))
     return s

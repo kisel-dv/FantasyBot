@@ -1,13 +1,13 @@
+import pandas as pd
 import json
 import re
+import html
 import time
-import pandas as pd
+import os
 from datetime import datetime, timedelta
 from dateutil import parser
-import html
-import os
 
-from common import request_text_soup, save_xlsx
+from common import request_text_soup, save_dfs_to_xlsx
 
 
 UNDERSTAT_PATH = r'C:/Users/Dmitry/GoogleDrive/test.xlsx'
@@ -72,8 +72,8 @@ def update_mapping_h2h():
     # присоединение к существующему маппингу новых элементов
     mapping = mapping.append(resolved)
     # сохранение обновленных файлов - дополненного маппинга и сокращенного списка неразрешенных соотеошений
-    save_xlsx({'': mapping}, MAPPING_PATH)
-    save_xlsx({'': unresolved}, UNRESOLVED_MAPPING_PATH)
+    save_dfs_to_xlsx({'': mapping}, MAPPING_PATH)
+    save_dfs_to_xlsx({'': unresolved}, UNRESOLVED_MAPPING_PATH)
     return
 
 
@@ -89,7 +89,7 @@ def update_understat_missing(missing_ids):
     missing = pd.DataFrame()
     missing['understat'] = missing_links
     missing['sports'] = ''
-    save_xlsx({'': missing}, UNRESOLVED_MAPPING_PATH)
+    save_dfs_to_xlsx({'': missing}, UNRESOLVED_MAPPING_PATH)
     return
 
 
@@ -193,7 +193,7 @@ def pull_understat():
 
     # сохранение таблиц по всем чемпионатам в виде отдельных листов в один xlsx файл
     # TODO СТАЙЛИНГ ПО ЦЕЛЕВЫМ ПРИЗНАКАМ
-    save_xlsx(dfs, UNDERSTAT_PATH)
+    save_dfs_to_xlsx(dfs, UNDERSTAT_PATH)
     # обновление таблицы с неотображенными understat-id
     update_understat_missing(missing_ids)
 
