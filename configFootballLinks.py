@@ -164,3 +164,11 @@ for key in XBET_CHAMP_LINKS:
 # (профиль->таблица)
 SPORTS_CLUB_MAP = {'Маритиму': 'Маритиму Мадейра',
                    'Санта-Клара': 'Санта Клара'}
+
+# fantasy-h2h.ru
+H2H_LINKS = {'Россия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/179',
+             'Франция': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/180',
+             'Германия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/161',
+             'Испания': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/162',
+             'Англия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/159',
+             'Италия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/164'}

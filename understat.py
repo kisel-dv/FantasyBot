@@ -8,15 +8,11 @@ from datetime import datetime, timedelta
 from dateutil import parser
 
 from common import request_text_soup, save_dfs_to_xlsx
+from config import UNDERSTAT_PATH, MAPPING_PATH, UNRESOLVED_MAPPING_PATH
 
-
-UNDERSTAT_PATH = r'C:/Users/Dmitry/GoogleDrive/test.xlsx'
-MAPPING_PATH = r'C:/Users/Dmitry/PycharmProjects/FantasyBot/data/understat-h2h.xlsx'
-UNRESOLVED_MAPPING_PATH = r'data/understat-h2h missing.xlsx'
 
 REL_HIST_DAYS = 31
 UNDERSTAT_PLAYER_PREFIX = 'https://understat.com/player/'
-
 
 COMMON_COLUMNS = ['games', 'time', 'goals', 'assists',
                   'xG', 'xA',
@@ -41,7 +37,7 @@ UNDERSTAT_LEAGUES = {'Россия': 'RFPL',
 UNDERSTAT_SEASONS = ["2020"]
 
 
-def pull_understat_json(link, table_name):
+def pull_understat_json(link: str, table_name: str):
     main_text, _ = request_text_soup(link)
     players_data_dirty = re.findall(table_name + r"([^;]*);", main_text)[0]
     players_data_json = re.findall(r"JSON.parse\('([^']*)'\)", players_data_dirty)[0]

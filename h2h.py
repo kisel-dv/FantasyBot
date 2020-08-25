@@ -3,25 +3,20 @@ import pandas as pd
 import os
 
 from common import save_dfs_to_xlsx, request_text_soup
+from configFootballLinks import H2H_LINKS
+from config import H2H_DIR
 
-h2h_links = {'Россия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/179',
-             'Франция': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/180',
-             'Германия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/161',
-             'Испания': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/162',
-             'Англия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/159',
-             'Италия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/164'}
-
-suffix = "?filter%5Bamplua_id%5D=0&filter%5Bsport_team_id%5D=0&filter%5Bname%5D=&filter%5Bteam_keyword%5D=&filter%5Bpopularity_index%5D=&filter%5Blast_price%5D=0%3B3200&sort%5Bpoints%5D=desc&offset={}&ajax=1"
-threshold = 100
+SUFFIX_QUERY = "?filter%5Bamplua_id%5D=0&filter%5Bsport_team_id%5D=0&filter%5Bname%5D=&filter%5Bteam_keyword%5D=&filter%5Bpopularity_index%5D=&filter%5Blast_price%5D=0%3B3200&sort%5Bpoints%5D=desc&offset={}&ajax=1"
+THRESHOLD = 100
 
 H2H_COLUMNS = ['Амплуа', 'Клуб', 'Имя', '$', 'sports_id']
 
 
 def update_h2h():
-    for current_champ, current_link in h2h_links.items():
+    for current_champ, current_link in H2H_LINKS.items():
         if not current_link:
             continue
-        link = current_link + suffix
+        link = current_link + SUFFIX_QUERY
         offset = 0
 
         # cycle to pull all data - in every update we are getting some numbers of players
@@ -48,7 +43,7 @@ def update_h2h():
                 p[-1] = t.find('a', title="Профиль игрока").get('href').strip().split('/')[-2]
                 player_data.append(p)
 
-            offset = offset + threshold
+            offset = offset + THRESHOLD
 
         # создание датафрейма
         df = pd.DataFrame(dict(zip(keys, list(map(list, zip(*player_data))))))
@@ -60,10 +55,9 @@ def update_h2h():
         dfs = {current_champ: df[H2H_COLUMNS]}
 
         # todo: СДЕЛАТЬ НОРМАЛЬНОЕ СОХРАНЕНИЕ, ВЫНЕСТИ ПРОВЕРКУ ДИРЕКТОРИИ В КОММОН путь в конфиг, проверять папку на наличие. КСТАТИ ПАПКУ ЛОГОВ МЫ ТОЖЕ НЕ ПРОВЕРЯЕМ
-        directory = r'data/h2h/'
-        if not os.path.isdir(directory):
-            os.makedirs(directory)
-        path = directory + current_champ + ".xlsx"
+        if not os.path.isdir(H2H_DIR):
+            os.makedirs(H2H_DIR)
+        path = H2H_DIR + current_champ + ".xlsx"
         save_dfs_to_xlsx(dfs, path)
 
 
