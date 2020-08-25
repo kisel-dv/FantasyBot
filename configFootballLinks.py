@@ -158,3 +158,9 @@ for key in CHAMP_LINKS:
 # преобразование в словарь словарей
 for key in XBET_CHAMP_LINKS:
     XBET_CHAMP_LINKS[key] = dict(zip(XBET_CHAMP_LINKS_FIELDS, XBET_CHAMP_LINKS[key]))
+
+
+# захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
+# (профиль->таблица)
+SPORTS_CLUB_MAP = {'Маритиму': 'Маритиму Мадейра',
+                   'Санта-Клара': 'Санта Клара'}

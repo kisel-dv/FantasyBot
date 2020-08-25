@@ -3,6 +3,9 @@ import time
 import pandas as pd
 import seaborn as sns
 import logging
+from bs4 import BeautifulSoup
+from datetime import date
+from typing import Tuple, Dict, Any
 
 from common import rus_date_convert, request_text_soup
 
@@ -14,7 +17,7 @@ MULTIPLIER_MARATHON = 1/(1 + MARGIN_MARATHON)
 
 
 # функция для подсчета вероятности клиншитов и матожиданий забитых голов
-def score_cleansheet_expected(team, match_soup):
+def score_cleansheet_expected(team: str, match_soup: BeautifulSoup) -> Tuple[float, float]:
     # коэффициенты по событиям типа "первая/вторая команда забьет больше x.5 голов"
     goals_over_prices = match_soup.find_all('span', attrs={'data-prt': 'CP',
                                                            'data-selection-key': re.compile(r'\d*@Total_Goals_\(' +
@@ -53,7 +56,7 @@ def score_cleansheet_expected(team, match_soup):
     return score, cs
 
 
-def get_style_params(week_stats):
+def get_style_params(week_stats: Dict[str, list]) -> Tuple[Any, Any]:
     color_df = pd.DataFrame(week_stats, index=None)
     # суммирование покомандно - для ситуаций, где у какой-либо команды в одном туре будет несколько матчей
     color_df = color_df.groupby(color_df['team'], as_index=False).sum()
@@ -66,7 +69,7 @@ def get_style_params(week_stats):
     return color_s.ctx, color_s.index
 
 
-def set_style(week_stats, color_scheme, team_order):
+def set_style(week_stats: Dict[str, list], color_scheme, team_order):
     # а теперь уже готовим датафрейм, который и пойдет на выход
     df = pd.DataFrame(week_stats, index=None)
     # округления для улучшения зрительного восприятия
@@ -94,7 +97,8 @@ def set_style(week_stats, color_scheme, team_order):
     return s
 
 
-def marathon_processing(current_champ, current_champ_links, deadline_date, match_num):
+def marathon_processing(current_champ: str, current_champ_links: Tuple[str],
+                        deadline_date: date, match_num: int):
     # фиксирование времени по каждому чемпионату, логирование обработки каждого чемпионата
     champ_start_time = time.time()
     # запрос страницы с матчами по текущему чемпионату

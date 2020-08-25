@@ -3,6 +3,7 @@ import logging
 import time
 from telebot.types import InputMediaPhoto
 from contextlib import ExitStack
+from typing import List
 
 from config import TOKEN, PROXY_LIST, TG_CHANNELS
 
@@ -31,7 +32,7 @@ def check_proxy():
     raise Exception
 
 
-def safety_send_group(channel_id, media, proxy=False):
+def safety_send_group(channel_id: str, media: List[InputMediaPhoto], proxy: bool = False) -> None:
     bot = telebot.TeleBot(TOKEN)
     if proxy:
         working_proxy = check_proxy()
@@ -51,7 +52,7 @@ def safety_send_group(channel_id, media, proxy=False):
 
 
 # kwargs Для channel_id/proxy
-def posting_to_channel(channel_id, caption, *files):
+def posting_to_channel(channel_id: str, caption: str, *files) -> None:
     with ExitStack() as stack:
         pics = [stack.enter_context(open(fp, 'rb')) for fp in files if fp is not None]
         media = []
@@ -62,7 +63,7 @@ def posting_to_channel(channel_id, caption, *files):
     return
 
 
-def posting_info_message(channel_id, text=""):
+def posting_info_message(channel_id: str, text: str = "") -> None:
     bot = telebot.TeleBot(TOKEN)
     bot.send_message(channel_id, text)
     return

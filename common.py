@@ -8,7 +8,8 @@ import os
 import json
 import pandas as pd
 from bs4 import BeautifulSoup
-from datetime import date, datetime
+from datetime import date
+from typing import Tuple, Dict, Union
 
 from configFootballLinks import CHAMP_LINKS
 from config import WKHTMLTOIMAGE_PATH
@@ -30,7 +31,7 @@ REQUEST_HEADERS = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl
 
 # функция для конвертации даты из кириллицы в date формат,
 # ожидается, что на вход мы получаем дату в формате day month[ time]
-def rus_date_convert(d):
+def rus_date_convert(d: str) -> date:
     # проверка - либо на вход дано пустое значение, либо на вход дано время без даты - в таком случае выдаем "сегодня"
     if d == '' or d[2] == ':':
         return date.today()
@@ -49,15 +50,15 @@ def rus_date_convert(d):
 
 
 # генерирует надпись для первой картинки из выкладываемых для каждого чемпионата
-def get_champ_stats_caption(champ, deadline, deadline_date):
-    weekday = WEEKDAY_CYRILLIC[datetime.weekday(deadline_date)]
+def get_champ_stats_caption(champ: str, deadline: str, deadline_date: date) -> str:
+    weekday = WEEKDAY_CYRILLIC[deadline_date.weekday()]
     emoji = CHAMP_LINKS[champ]['emoji']
     caption = '{}{}\nДедлайн: {} ({})'.format(emoji, champ, deadline, weekday)
     return caption
 
 
 # функция для обработки каждой страницы, возвращает пару (текст страницы, soup объект)
-def request_text_soup(link, **kwargs):
+def request_text_soup(link: str, **kwargs) -> Tuple[str, BeautifulSoup]:
     req = urllib.request.urlopen(urllib.request.Request(link, headers=REQUEST_HEADERS))
     if link != req.geturl():
         logging.error('При обработке ссылки произошла переадресация на другой адрес')
@@ -70,7 +71,7 @@ def request_text_soup(link, **kwargs):
 
 
 # функция для сохранения картинок
-def save_pic(s, directory, name, flag):
+def save_pic(s, directory: str, pic_name: str, flag: str) -> Union[str, None]:
     if s is None:
         return None
     options = {'encoding': "UTF-8"}
@@ -81,14 +82,14 @@ def save_pic(s, directory, name, flag):
     html = s.render()
     if not os.path.isdir(directory):
         os.makedirs(directory)
-    path = directory + name + ".png"
+    path = directory + pic_name + ".png"
     imgkit.from_string(html, path, config=IMGKIT_CONFIG, options=options)
-    logging.info('{}: картинка сохранена'.format(name))
+    logging.info('{}: картинка сохранена'.format(pic_name))
     return path
 
 
 # функция для сохранения стилизированных данных в формате таблиц
-def save_stats_to_excel(writer, champ, marathon, calendar):
+def save_stats_to_excel(writer: pd.ExcelWriter, champ: str, marathon, calendar) -> None:
     workbook = writer.book
     writer.sheets[champ] = workbook.create_sheet(champ)
     # настройка ширины столбцов (первых 6, потому что используются только они)
@@ -104,12 +105,12 @@ def save_stats_to_excel(writer, champ, marathon, calendar):
     return
 
 
-def save_json(j, path):
+def save_json(j: dict, path: str) -> None:
     with open(path, 'w', encoding='UTF-8') as f:
         json.dump(j, f)
 
 
-def save_dfs_to_xlsx(dfs, file_path):
+def save_dfs_to_xlsx(dfs: Dict[str, pd.DataFrame], file_path: str) -> None:
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
     for sheet_name, df in dfs.items():  # loop through `dict` of dataframes
         df.to_excel(writer, sheet_name=sheet_name, index=False)  # send df to writer

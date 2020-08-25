@@ -3,8 +3,9 @@
 """
 import pandas as pd
 import time
-from datetime import date
 import logging
+from datetime import date
+from typing import List, Union
 
 import calendarSports
 import common
@@ -20,7 +21,7 @@ DAYS_BEFORE_DEADLINE = 2
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
 # на выходе получаем представление даты дедлайна в двух видах: текстовом и datetime + количество матчей в туре
-def pull_champ_meta(current_champ):
+def pull_champ_meta(current_champ: str) -> Union[list, None]:
     link = CHAMP_LINKS[current_champ]['sportsFantasy']
     if not link:
         logging.warning('{}: Отсутствует ссылка на метаданные')
@@ -76,7 +77,7 @@ def pull_champ_meta(current_champ):
 
 
 # 'prod' / 'test'
-def run_stats_update(mode='prod', champs=None):
+def run_stats_update(mode: str = 'prod', champs: List[str] = None) -> None:
     # иницализация excelWriter, mode='w' для полной перезаписи файла
     excel_path = EXCEL_PATHS.get(mode)
     channel_id = TG_CHANNELS.get(mode)

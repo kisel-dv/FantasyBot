@@ -4,6 +4,7 @@ import logging
 import json
 from selenium import webdriver
 from bs4 import BeautifulSoup
+from typing import Dict, Union
 
 from configFootballLinks import XBET_CHAMP_LINKS
 from common import request_text_soup
@@ -18,7 +19,7 @@ MATCHES_ENOUGH_TO_USE_TABLE_STATS = 5
 
 
 # функция, тянущая с 1xbet коэффициенты на чемпиона первенства
-def pull_champ_winner_probs(current_champ, matchweek):
+def pull_champ_winner_probs(current_champ: str, matchweek: int) -> Dict[str, float]:
     time_start = time.time()
     if matchweek > MATCHES_ENOUGH_TO_USE_TABLE_STATS:
         logging.info('{}: сыграно достаточно матчей для табличной статистики'.format(current_champ))
@@ -36,6 +37,7 @@ def pull_champ_winner_probs(current_champ, matchweek):
         page_html = browser.page_source
         soup = BeautifulSoup(page_html, 'html.parser')
         bets = soup.find('div', class_=re.compile('bets betCols[12]')).find_all('div')
+        # dict of coefficients
         cs = {}
         for bet in bets:
             spans = bet.find_all('span')
@@ -51,19 +53,20 @@ def pull_champ_winner_probs(current_champ, matchweek):
                     print('Команда {} не найдена в маппинге в sports.ru имена'.format(team))
                     raise Exception
                 coeff = float(spans[1].text)
-                cs[team] = 1/coeff
+                cs[team] = 1 / coeff
     finally:
         browser.close()
         browser.quit()
-    for k, v in cs.items():
-        cs[k] = v/sum(cs.values())
+    # преобразовываем в вероятность для каждой команды - учитываем "маржу" в этой линии
+    for t, v in cs.items():
+        cs[t] = v / sum(cs.values())
     logging.info(
         '{}: Линия букмекеров на победу в чемпионате собрана, время обработки: {}s'.format(
             current_champ, round(time.time() - time_start, 3)))
     return cs
 
 
-def find_xbet_link(current_champ):
+def find_xbet_link(current_champ: str) -> Union[str, None]:
     logging.info('{}: Выгрузка ссылки на линии победителей чемпионатов с 1xbet'.format(current_champ))
     link = XBET_CHAMP_LINKS[current_champ]['link']
     _, soup = request_text_soup(link)

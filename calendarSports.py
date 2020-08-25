@@ -1,27 +1,25 @@
 import time
 import pandas as pd
 import logging
-from math import log
+from typing import Tuple, Dict, List, Callable
 
 from common import request_text_soup
 from xbet import pull_champ_winner_probs
-
-
-# захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
-# (профиль->таблица)
-SPORTS_CLUB_MAP = {'Маритиму': 'Маритиму Мадейра',
-                   'Санта-Клара': 'Санта Клара'}
+from calendarMetrics import difficulty_probs, difficulty_table
 
 SIDE_MAP = {'В гостях': '(г)',
             'Дома': '(д)'}
 
-# среднее преимущество домашнего поля, основанное на исторической статистике
-HOME_ADVANTAGE = 0.4
+DIFF_FUNCS = {'table': difficulty_table,
+              'champion': difficulty_probs}
+
+
 SPORTS_TABLE_COLS = ['games', 'won', 'draw', 'lost', 'g_scored', 'g_against', 'points']
 GAMES_IN_CALENDAR = 5
 
 
-def table_processing(current_champ, champ_link):
+def table_processing(current_champ: str, champ_link: str) -> Tuple[Dict[str, str],
+                                                                   Dict[str, float]]:
     table_link = champ_link + 'table/'
     # получаем страницу с таблицей обрабатываемого чемпионата
     _, table_soup = request_text_soup(table_link)
@@ -43,24 +41,20 @@ def table_processing(current_champ, champ_link):
         team_stats = dict(zip(SPORTS_TABLE_COLS, team_numbers))
         team_stats['avg_g_scored'] = team_stats['g_scored'] / team_stats['games'] if team_stats['games'] else 0
         team_stats['avg_g_against'] = team_stats['g_against'] / team_stats['games'] if team_stats['games'] else 0
-        stats[team_name] = team_stats
-    # транспонируем этот словарь, чтобы иметь доступ в другом порядке
-    # (вместо team_name -> games -> 5 получаем games -> team_name -> 5)
-    # для случая, когда мы не хотим обрабатывать таблицу из-за малого количества туров, получим {}
-    table_stats = dict(pd.DataFrame(stats).transpose())
+        stats[team_name] = team_stats['avg_g_scored'] - team_stats['avg_g_against']
     logging.info('{}: таблица чемпионата обработана'.format(current_champ))
-    return team_links, table_stats
+    return team_links, stats
 
 
 # безопасное взятие первых n матчей
-def get_first_matches(matches, n):
+def get_first_matches(matches: List[str], n: int) -> List[str]:
     m = len(matches)
     # добавит пустые строчки, если количество оставшихся в календаре матчей меньше n
     return [matches[x] for x in range(m)] + ['' for _ in range(n - m)]
 
 
 # TODO: реворк обработки календаря чтобы лучше ловить спарки
-def get_champ_calendar(current_champ, current_champ_link, team_links):
+def get_champ_calendar(current_champ: str, current_champ_link: str, team_links: Dict[str, str]) -> pd.DataFrame:
     champ_calendar_dict = {}
     for team, team_link in team_links.items():
         team_link = team_link + 'calendar/'
@@ -105,39 +99,8 @@ def get_champ_calendar(current_champ, current_champ_link, team_links):
     return champ_calendar
 
 
-# функция для вычисления сложности календаря на основе средней статистики за текущее первенство
-def difficulty_table(t1, t2, side, stats_data):
-    # поправка на место проведения игры - высчитана средняя в среднем для крупных европейских чемпионатов
-    side_eff = HOME_ADVANTAGE * ((side == '(д)') - (side == '(г)'))
-    # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
-    if SPORTS_CLUB_MAP.get(t2):
-        t2 = SPORTS_CLUB_MAP[t2]
-    # tableStats - глобальный, для доступа к переменной из основной функции обработки
-    try:
-        difficulty = (stats_data['avg_g_scored'][t1] - stats_data['avg_g_against'][t1]) - \
-                     (stats_data['avg_g_scored'][t2] - stats_data['avg_g_against'][t2])
-        difficulty = side_eff + round(difficulty, 2)
-        return difficulty
-    except KeyError:
-        # если нашлась новая проблема с разными названиями в разных местах на спортс ру
-        logging.error('Неизвестный клуб, матч {} - {}'.format(t1, t2))
-        return 0
-
-
-# функция для вычисления сложности календаря на основе букмекерских котиовок на чемпиона
-def difficulty_probs(t1, t2, side, stats_data):
-    if side == '(г)':
-        t1, t2 = t2, t1
-    diff = 1.4 * (0.23 + 0.175*log(stats_data[t1]) - 0.148*log(stats_data[t2]))
-    return ((side == '(д)') - (side == '(г)')) * diff
-
-
-DIFF_FUNCS = {'table': difficulty_table,
-              'champion': difficulty_probs}
-
-
 # цвет в зависимости от пороговых значений сложности
-def get_color(x):
+def get_color(x: float) -> str:
     if x < -0.8:
         color = 'background-color: #CC0000'
     elif (x >= -0.8) and (x <= -0.3):
@@ -151,7 +114,9 @@ def get_color(x):
     return color
 
 
-def coloring_calendar(value, diff_func, stats_data):
+def coloring_calendar(value: pd.Series,
+                      diff_func: Callable[[str, str, str, Dict[str, float]], float],
+                      stats_data: Dict[str, float]) -> List[str]:
     par = []
     # из-за предобработки придет либо пустая строка, либо строка в формате 'dd.mm.yyyy <opponent>(s)', s - side
     for i, op in enumerate(value):
@@ -166,14 +131,14 @@ def coloring_calendar(value, diff_func, stats_data):
     return par
 
 
-def styling_calendar(calendar, mode, stats_data):
+def styling_calendar(calendar: pd.DataFrame, mode: str, stats_data: Dict[str, float]):
     diff_func = DIFF_FUNCS[mode]
     calendar_colored = calendar.style.apply(lambda x: coloring_calendar(x, diff_func, stats_data))
     return calendar_colored
 
 
 # основная функция обработки в этом модуле
-def calendar_processing(current_champ, current_champ_links, matchweek):
+def calendar_processing(current_champ: str, current_champ_links: Dict[str, str], matchweek: int):
     # логирование информации о времени обработки каждого чемпионата
     champ_start_time = time.time()
     current_champ_link = current_champ_links['sports']
@@ -188,7 +153,7 @@ def calendar_processing(current_champ, current_champ_links, matchweek):
     champ_calendar = get_champ_calendar(current_champ, current_champ_link, team_links)
 
     # бывают случаи, когда 1хбет дает не полную линию - не для всех команд
-    if len(champion_probs) != len(table_stats['games']):
+    if len(champion_probs) != len(table_stats):
         logging.warning('{}: Линия на победителя чемпионата неполная'.format(current_champ))
         champion_probs = {}
     # оформление и сохранение (если tableStats и championProbs пустые, то без оформления)
