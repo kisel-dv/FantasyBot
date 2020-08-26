@@ -33,7 +33,6 @@ UNDERSTAT_LEAGUES = {'Россия': 'RFPL',
                      'Италия': 'Serie_A',
                      'Франция': 'Ligue_1'}
 
-#UNDERSTAT_LEAGUES = {'Россия': 'RFPL'}
 UNDERSTAT_SEASONS = ["2020"]
 
 

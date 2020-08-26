@@ -11,14 +11,13 @@ HOME_ADVANTAGE = 0.4
 # функция для вычисления сложности календаря на основе средней статистики за текущее первенство
 def difficulty_table(team1: str, team2: str, side: str, stats_data: Dict[str, float]) -> float:
     # поправка на место проведения игры - высчитана средняя в среднем для крупных европейских чемпионатов
-    side_adv = HOME_ADVANTAGE * ((side == '(д)') - (side == '(г)'))
+    side_adv = HOME_ADVANTAGE * (1 if side == '(д)' else -1)
     # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
     if SPORTS_CLUB_MAP.get(team2):
-        t2 = SPORTS_CLUB_MAP[team2]
+        team2 = SPORTS_CLUB_MAP[team2]
     # tableStats - глобальный, для доступа к переменной из основной функции обработки
     try:
-        difficulty = (stats_data['avg_g_scored'][team1] - stats_data['avg_g_against'][team1]) - \
-                     (stats_data['avg_g_scored'][team2] - stats_data['avg_g_against'][team2])
+        difficulty = stats_data[team1] - stats_data[team2]
         difficulty = side_adv + round(difficulty, 2)
         return difficulty
     except KeyError:
@@ -32,4 +31,4 @@ def difficulty_probs(team1: str, team2: str, side: str, stats_data: Dict[str, fl
     if side == '(г)':
         team1, team2 = team2, team1
     diff = 1.4 * (0.23 + 0.175*log(stats_data[team1]) - 0.148*log(stats_data[team2]))
-    return ((side == '(д)') - (side == '(г)')) * diff
+    return diff * (1 if side == '(д)' else -1)

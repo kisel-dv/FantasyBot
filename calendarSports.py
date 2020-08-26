@@ -103,11 +103,11 @@ def get_champ_calendar(current_champ: str, current_champ_link: str, team_links: 
 def get_color(x: float) -> str:
     if x < -0.8:
         color = 'background-color: #CC0000'
-    elif (x >= -0.8) and (x <= -0.3):
+    elif -0.8 <= x < -0.3:
         color = 'background-color: #FD7702'
-    elif (x >= -0.3) and (x <= 0.4):
+    elif -0.3 <= x < 0.4:
         color = 'background-color: #FFFF19'
-    elif (x >= 0.4) and (x <= 1):
+    elif 0.4 <= x < 1:
         color = 'background-color: #88CC00'
     else:
         color = 'background-color: #009900'

@@ -59,7 +59,7 @@ def pull_champ_meta(current_champ: str) -> Union[list, None]:
     if deadline_date < date.today():
         logging.info('{}: Нет даты дедлайна, чемпионат пропускается...'.format(current_champ))
         return
-    elif -1 < (deadline_date - date.today()).days > DAYS_BEFORE_DEADLINE:
+    elif (deadline_date - date.today()).days > DAYS_BEFORE_DEADLINE:
         logging.info('{}: До дедлайна({}) больше {} дней, чемпионат пропускается...'.format(current_champ,
                                                                                             deadline_date,
                                                                                             DAYS_BEFORE_DEADLINE))
