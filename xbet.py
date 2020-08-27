@@ -19,7 +19,7 @@ MATCHES_ENOUGH_TO_USE_TABLE_STATS = 5
 
 
 # функция, тянущая с 1xbet коэффициенты на чемпиона первенства
-def pull_champ_winner_probs(current_champ: str, matchweek: int) -> Dict[str, float]:
+def pull_champ_winner_probs(current_champ: str, matchweek: int, team_number: int) -> Dict[str, float]:
     time_start = time.time()
     if matchweek > MATCHES_ENOUGH_TO_USE_TABLE_STATS:
         logging.info('{}: сыграно достаточно матчей для табличной статистики'.format(current_champ))
@@ -60,6 +60,11 @@ def pull_champ_winner_probs(current_champ: str, matchweek: int) -> Dict[str, flo
     # преобразовываем в вероятность для каждой команды - учитываем "маржу" в этой линии
     for t, v in cs.items():
         cs[t] = v / sum(cs.values())
+
+    # бывают случаи, когда 1хбет дает не полную линию - не для всех команд
+    if len(cs) != team_number:
+        logging.warning('{}: Линия на победителя чемпионата неполная'.format(current_champ))
+
     logging.info(
         '{}: Линия букмекеров на победу в чемпионате собрана, время обработки: {}s'.format(
             current_champ, round(time.time() - time_start, 3)))

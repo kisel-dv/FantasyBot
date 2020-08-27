@@ -126,5 +126,5 @@ if __name__ == '__main__':
     logging.basicConfig(filename='log/{}.log'.format(date.today()),
                         level=logging.INFO,
                         format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
-    #run_stats_update('test')
-    run_stats_update('prod')
+    run_stats_update('test', champs=['Россия'])
+    #run_stats_update('prod')

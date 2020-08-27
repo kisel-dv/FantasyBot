@@ -1,6 +1,6 @@
 import logging
 from math import log
-from typing import Dict
+from typing import Dict, Callable, Any
 
 from configFootballLinks import SPORTS_CLUB_MAP
 
@@ -26,9 +26,19 @@ def difficulty_table(team1: str, team2: str, side: str, stats_data: Dict[str, fl
         return 0
 
 
+# геттер для словаря, если ключа не было - применить к данным словаря некоторую функцию
+def getter_probs(data: Dict[Any, Any], k: Any, func: Callable) -> Any:
+    res = data.get(k)
+    if res in None:
+        res = func(data.values())
+    return res
+
+
 # функция для вычисления сложности календаря на основе букмекерских котиовок на чемпиона
 def difficulty_probs(team1: str, team2: str, side: str, stats_data: Dict[str, float]) -> float:
     if side == '(г)':
         team1, team2 = team2, team1
-    diff = 1.4 * (0.23 + 0.175*log(stats_data[team1]) - 0.148*log(stats_data[team2]))
+    s1 = getter_probs(stats_data, team1, min)
+    s2 = getter_probs(stats_data, team2, min)
+    diff = 1.4 * (0.23 + 0.175*log(s1) - 0.148*log(s2))
     return diff * (1 if side == '(д)' else -1)

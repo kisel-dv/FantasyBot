@@ -148,14 +148,11 @@ def calendar_processing(current_champ: str, current_champ_links: Dict[str, str],
     # обработка таблицы: table stats - dict anyway
     team_links, table_stats = table_processing(current_champ, current_champ_link)
     # обработка букмекерской линии на победителя чемпионата: champion_probs - dict anyway
-    champion_probs = pull_champ_winner_probs(current_champ, matchweek)
+    team_number = len(table_stats)
+    champion_probs = pull_champ_winner_probs(current_champ, matchweek, team_number)
     # обработка календаря
     champ_calendar = get_champ_calendar(current_champ, current_champ_link, team_links)
 
-    # бывают случаи, когда 1хбет дает не полную линию - не для всех команд
-    if len(champion_probs) != len(table_stats):
-        logging.warning('{}: Линия на победителя чемпионата неполная'.format(current_champ))
-        champion_probs = {}
     # оформление и сохранение (если tableStats и championProbs пустые, то без оформления)
     if champion_probs:
         champ_calendar = styling_calendar(champ_calendar, 'champion', champion_probs)
