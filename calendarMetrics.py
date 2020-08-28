@@ -29,7 +29,7 @@ def difficulty_table(team1: str, team2: str, side: str, stats_data: Dict[str, fl
 # геттер для словаря, если ключа не было - применить к данным словаря некоторую функцию
 def getter_probs(data: Dict[Any, Any], k: Any, func: Callable) -> Any:
     res = data.get(k)
-    if res in None:
+    if res is None:
         res = func(data.values())
     return res
 
