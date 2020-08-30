@@ -26,6 +26,7 @@ MONTHS = {'дек': 12, 'янв': 1, 'фев': 2,
 
 # маппинг дня недели в сокращенное кириллическое представление
 WEEKDAY_CYRILLIC = {0: 'ПН', 1: 'ВТ', 2: 'СР', 3: 'ЧТ', 4: 'ПТ', 5: 'СБ', 6: 'ВС'}
+# TODO: внести в функцию обратно?
 REQUEST_HEADERS = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"}
 
 
@@ -100,7 +101,8 @@ def save_stats_to_excel(writer: pd.ExcelWriter, champ: str, marathon, calendar) 
         marathon.to_excel(writer, sheet_name=champ, startrow=0, startcol=0, index=False)
     # с отступом в 5 строк записываем календарь
     if calendar is not None:
-        calendar.to_excel(writer, sheet_name=champ, startrow=calendar.data.shape[0] + 5, startcol=0)
+        offset = calendar.data.shape[0] + 5 if marathon is not None else 0
+        calendar.to_excel(writer, sheet_name=champ, startrow=offset, startcol=0)
     logging.info('{}: информация в excel обновлена'.format(champ))
     return
 
