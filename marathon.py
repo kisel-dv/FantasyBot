@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import seaborn as sns
 import logging
+import math
 from bs4 import BeautifulSoup
 from datetime import date
 from typing import Tuple, Dict, Any
@@ -12,48 +13,8 @@ from common import rus_date_convert, request_text_soup
 PREFIX_MARATHON = 'https://www.marathonbet.ru/su/betting/'
 
 # задание констант, описывающих маржу букмекера - для конвертации коэффициентов в вероятность
-MARGIN_MARATHON = 0.01
+MARGIN_MARATHON = 0.05
 MULTIPLIER_MARATHON = 1/(1 + MARGIN_MARATHON)
-
-
-# функция для подсчета вероятности клиншитов и матожиданий забитых голов
-def score_cleansheet_expected(team: str, match_soup: BeautifulSoup) -> Tuple[float, float]:
-    # коэффициенты по событиям типа "первая/вторая команда забьет больше x.5 голов"
-    goals_over_prices = match_soup.find_all('span', attrs={'data-prt': 'CP',
-                                                           'data-selection-key': re.compile(r'\d*@Total_Goals_\(' +
-                                                                                            team +
-                                                                                            r'_Team\)\d?\.Over_\d\.5')})
-    # обработка
-    score = 0
-    addition = 0
-    for goal_price in goals_over_prices:
-        goals = goal_price.get('data-selection-key')[-3:]
-        if goals != '1.5' and score == 0:
-            # если в линии не было события вида тотал больше 1.5, считаем, что вероятность забить больше 1.5 равна 1
-            score = float(goals) - 1.5
-        addition = MULTIPLIER_MARATHON / float(goal_price.text)
-        score += addition
-    # коэффициенты по событиям типа "первая/вторая команда забьет/не забьет"
-    cs_prices = match_soup.find_all('span', attrs={'data-prt': 'CP',
-                                                   'data-selection-key': re.compile(r'\d*@' + team +
-                                                                                    r'_Team_To_Score\.(yes|no)')})
-    cs = 0.01
-    addition_0 = 1  # больше 0.5 голов
-    # обработка найденных по шаблону событий
-    for cs_price in cs_prices:
-        outcome = cs_price.get('data-selection-key')[-2:]
-        c = MULTIPLIER_MARATHON / float(cs_price.text)
-        # для события "команда не забьет" - записываем вероятность в сухой матч для соперника
-        # для события "команда забьет" - получаем вероятность, которую нужно просуммировать с полученной ранее суммой
-        # при этом, в линии может не существовать данных событий - в таком случае будут использованы дефолтные значения
-        if outcome == 'no':
-            cs = c
-        else:
-            addition_0 = c
-    # прибавка, чтобы аппроксимировать маленькие коэффициенты, которых нет в линии (на большое количество забитых мячей)
-    # данная прибавка взята как половина последней вероятности, которая была слагаемым суммы
-    score += addition_0 + addition / 2
-    return score, cs
 
 
 def get_style_params(week_stats: Dict[str, list]) -> Tuple[Any, Any]:
@@ -97,8 +58,42 @@ def set_style(week_stats: Dict[str, list], color_scheme, team_order):
     return s
 
 
+# TODO: переделать, чтобы вызывалось как-то проще?
+def score_cleansheet_expected(match_soup: BeautifulSoup) -> Tuple[float, float, float, float]:
+    home_proba, guest_proba = 0, 0
+    bets_home_team = match_soup.find_all('span', attrs={'data-prt': 'CP',
+                                                        'data-selection-key':
+                                                            re.compile(r'\d*@First_Team_To_Score\.yes')})
+    bets_guest_team = match_soup.find_all('span', attrs={'data-prt': 'CP',
+                                                         'data-selection-key':
+                                                             re.compile(r'\d*@Second_Team_To_Score\.yes')})
+    bets_both_team = match_soup.find_all('span', attrs={'data-prt': 'CP',
+                                                        'data-selection-key':
+                                                            re.compile(r'\d*@Both_Teams_To_Score\.yes')})
+
+    if bets_home_team:
+        home_proba = MULTIPLIER_MARATHON / float(bets_home_team[0].text)
+    if bets_guest_team:
+        guest_proba = MULTIPLIER_MARATHON / float(bets_guest_team[0].text)
+
+    if (not bets_home_team or not bets_guest_team) and bets_both_team:
+        both_proba = MULTIPLIER_MARATHON / float(bets_both_team[0].text)
+        if home_proba != 0:
+            guest_proba = both_proba / home_proba
+        elif guest_proba != 0:
+            home_proba = both_proba / guest_proba
+
+    home_cs = 1 - guest_proba
+    guest_cs = 1 - home_proba
+    # мистер Пуассон
+    home_score = - math.log(1 - home_proba)
+    guest_score = - math.log(1 - guest_proba)
+    return home_score, guest_score, home_cs, guest_cs
+
+
 def marathon_processing(current_champ: str, current_champ_links: Tuple[str],
-                        deadline_date: date, match_num: int):
+                        deadline_date: date, max_date: date,
+                        match_num: int):
     # фиксирование времени по каждому чемпионату, логирование обработки каждого чемпионата
     champ_start_time = time.time()
     # запрос страницы с матчами по текущему чемпионату
@@ -115,7 +110,7 @@ def marathon_processing(current_champ: str, current_champ_links: Tuple[str],
         match_date_text = elem.find('td', class_='date').text.strip()
         match_date = rus_date_convert(match_date_text)
         # обрабатываем только те матчи, которые проходят не раньше дня дедлайна по чемпионату
-        if match_date >= deadline_date:
+        if deadline_date <= match_date <= max_date:
             home_team, guest_team = elem.get('data-event-name').split(' - ')
             matches.append({'link': elem.get('data-event-path'),
                             'home': home_team.strip(),
@@ -134,8 +129,7 @@ def marathon_processing(current_champ: str, current_champ_links: Tuple[str],
     for match in match_links:
         match_link = PREFIX_MARATHON + match['link']
         _, match_soup = request_text_soup(match_link)
-        expected_score_home, cs_prob_away = score_cleansheet_expected('First', match_soup)
-        expected_score_away, cs_prob_home = score_cleansheet_expected('Second', match_soup)
+        expected_score_home, expected_score_away, cs_prob_home, cs_prob_away = score_cleansheet_expected(match_soup)
         # расширяем дикту
         week_stats['team'].extend([match['home'], match['guest']])
         week_stats['cleansheet'].extend([cs_prob_home, cs_prob_away])

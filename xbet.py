@@ -47,11 +47,9 @@ def pull_champ_winner_probs(current_champ: str, matchweek: int, team_number: int
             team = bet_text[0]
             res = bet_text[1]
             if res[:2] == 'Да':
-                try:
-                    team = XBET_CHAMP_LINKS[current_champ]['sports_map'][team]
-                except KeyError:
-                    print('Команда {} не найдена в маппинге в sports.ru имена'.format(team))
-                    raise Exception
+                mapped_team = XBET_CHAMP_LINKS[current_champ]['sports_map'].get(team)
+                if mapped_team is not None:
+                    team = mapped_team
                 coeff = float(spans[1].text)
                 cs[team] = 1 / coeff
     finally:
@@ -75,6 +73,7 @@ def find_xbet_link(current_champ: str) -> Union[str, None]:
     logging.info('{}: Выгрузка ссылки на линии победителей чемпионатов с 1xbet'.format(current_champ))
     link = XBET_CHAMP_LINKS[current_champ]['link']
     _, soup = request_text_soup(link)
+    # TODO: переписать - сейчас не работает для Англии
     json_events = soup.find('script', type="application/ld+json")
     if json_events is None:
         logging.warning('{}: нет событий по ссылке из конфиг-файла'.format(current_champ))

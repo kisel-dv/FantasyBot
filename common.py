@@ -41,6 +41,7 @@ def rus_date_convert(d: str) -> date:
     day = int(day)
     # проверка начальных символов месяца в соответствии с ключами дикты
     month = MONTHS[month[:3]]
+    # TODO: на стыке лет - неверно
     year = date.today().year
     try:
         res = date(year, month, day)

@@ -16,7 +16,7 @@ from config import MARATHON_DIR, CALENDAR_DIR, TG_CHANNELS, EXCEL_PATHS
 
 
 # на сколько дней нужно смотреть вперед в поиске дедлайнов
-DAYS_BEFORE_DEADLINE = 2
+DAYS_BEFORE_DEADLINE = 3
 
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
@@ -54,7 +54,15 @@ def pull_champ_meta(current_champ: str) -> Union[list, None]:
     match_table = sports_fantasy_soup.find_all('table', class_='stat-table')[-1]
     # вычисление количества матчей в туре с помощью страницы фентези команды на спортс ру
     # в некоторых случаях данной таблицы вообще не будет на странице, например, когда дата следующего тура неясна
-    match_num = len(match_table.find_all('tr')) - 1 if match_table else 0
+    if match_table:
+        match_num = len(match_table.find_all('tr')) - 1
+        max_date = match_table.find_all('tr')[-1].td.text
+        day, month = map(int, max_date.split('|')[0].split('.'))
+        year = date.today().year
+        max_date = date(year, month, day)
+    else:
+        match_num = 0
+        max_date = None
 
     if deadline_date < date.today():
         logging.info('{}: Нет даты дедлайна, чемпионат пропускается...'.format(current_champ))
@@ -68,7 +76,7 @@ def pull_champ_meta(current_champ: str) -> Union[list, None]:
         logging.warning('{}: На спортс.ру не указаны матчи на ближайший тур'.format(current_champ))
         return
     logging.info('{}: Метаданные обработаны'.format(current_champ))
-    return [deadline_date, deadline_text, match_week, match_num]
+    return [deadline_date, max_date, deadline_text, match_week, match_num]
 
 
 # функция для извлечения из словаря CHAMP_LINKS сразу нескольких ключей
@@ -97,9 +105,10 @@ def run_stats_update(mode: str = 'prod', champs: List[str] = None) -> None:
         meta = pull_champ_meta(current_champ)
         if meta is None:
             continue
-        deadline_date, deadline_text, matchweek, match_num = meta
+        deadline_date, max_date, deadline_text, matchweek, match_num = meta
         # обработка и сохранение картинкой информации с Марафона
-        styled_marathon = marathon.marathon_processing(current_champ, current_champ_links, deadline_date, match_num)
+        styled_marathon = marathon.marathon_processing(current_champ, current_champ_links,
+                                                       deadline_date, max_date, match_num)
         path_marathon = common.save_pic(styled_marathon, MARATHON_DIR, current_champ, 'marathon')
         # обработка и сохранение картинкой календаря со спортс.ру
         styled_calendar = calendarSports.calendar_processing(current_champ, current_champ_links, matchweek)
@@ -126,5 +135,5 @@ if __name__ == '__main__':
     logging.basicConfig(filename='log/{}.log'.format(date.today()),
                         level=logging.INFO,
                         format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
-    #run_stats_update('test', champs=['Россия'])
+    #run_stats_update('test')
     run_stats_update('prod')

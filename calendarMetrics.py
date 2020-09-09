@@ -30,6 +30,7 @@ def difficulty_table(team1: str, team2: str, side: str, stats_data: Dict[str, fl
 def getter_probs(data: Dict[Any, Any], k: Any, func: Callable) -> Any:
     res = data.get(k)
     if res is None:
+        logging.warning('Команда {} не найдена в маппинге в sports.ru имена'.format(k))
         res = func(data.values())
     return res
 
