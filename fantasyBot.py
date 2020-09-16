@@ -24,7 +24,7 @@ def check_proxy():
                 # чтобы работающая прокси была первой на следующую проверку
                 PROXY_LIST[0], PROXY_LIST[current_proxy] = PROXY_LIST[current_proxy], PROXY_LIST[0]
                 return PROXY_LIST[0]
-            except:
+            except Exception:
                 time.sleep(1)
                 continue
         logging.warning('Не удалось установить соединение с помощью прокси #{}'.format(current_proxy))
@@ -42,7 +42,7 @@ def safety_send_group(channel_id: str, media: List[InputMediaPhoto], proxy: bool
             bot.send_media_group(channel_id, media)
             logging.info('Статистика по чемпионату отправлена в канал')
             return
-        except:
+        except Exception:
             logging.warning(
                 'Ошибка при попытке отправки сообщения в канал, попытка {}'.format(i + 1))
             time.sleep(1)

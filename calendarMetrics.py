@@ -13,7 +13,7 @@ def difficulty_table(team1: str, team2: str, side: str, stats_data: Dict[str, fl
     # поправка на место проведения игры - высчитана средняя в среднем для крупных европейских чемпионатов
     side_adv = HOME_ADVANTAGE * (1 if side == '(д)' else -1)
     # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
-    if SPORTS_CLUB_MAP.get(team2):
+    if team2 in SPORTS_CLUB_MAP:
         team2 = SPORTS_CLUB_MAP[team2]
     # tableStats - глобальный, для доступа к переменной из основной функции обработки
     try:

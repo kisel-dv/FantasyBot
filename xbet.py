@@ -6,16 +6,13 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 from typing import Dict, Union
 
-from configFootballLinks import XBET_CHAMP_LINKS
+from configFootballLinks import XBET_CHAMP_LINKS, MATCHES_ENOUGH_TO_USE_TABLE_STATS
 from common import request_text_soup
 from config import CHROME_DRIVER_PATH
 
 
 CHROME_OPTIONS = webdriver.ChromeOptions()
 CHROME_OPTIONS.add_argument('headless')  # для открытия headless-браузера
-
-# количество матчей, начиная с которой мы можем использовать статистику из таблицы лиги
-MATCHES_ENOUGH_TO_USE_TABLE_STATS = 5
 
 
 # функция, тянущая с 1xbet коэффициенты на чемпиона первенства
@@ -25,7 +22,7 @@ def pull_champ_winner_probs(current_champ: str, matchweek: int, team_number: int
         logging.info('{}: сыграно достаточно матчей для табличной статистики'.format(current_champ))
         return {}
     if current_champ not in XBET_CHAMP_LINKS:
-        logging.info('{}: в конфиг-файле отсутствует 1xbet-ссылка на данный чемпионат'.format(current_champ))
+        logging.warning('{}: в конфиг-файле отсутствует 1xbet-ссылка на данный чемпионат'.format(current_champ))
         return {}
     link = find_xbet_link(current_champ)
     if link is None:

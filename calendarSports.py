@@ -6,6 +6,7 @@ from typing import Tuple, Dict, List, Callable
 from common import request_text_soup
 from xbet import pull_champ_winner_probs
 from calendarMetrics import difficulty_probs, difficulty_table
+from configFootballLinks import MATCHES_ENOUGH_TO_USE_TABLE_STATS
 
 SIDE_MAP = {'В гостях': '(г)',
             'Дома': '(д)'}
@@ -156,7 +157,7 @@ def calendar_processing(current_champ: str, current_champ_links: Dict[str, str],
     # оформление и сохранение (если tableStats и championProbs пустые, то без оформления)
     if champion_probs:
         champ_calendar = styling_calendar(champ_calendar, 'champion', champion_probs)
-    elif table_stats:
+    elif table_stats and matchweek >= MATCHES_ENOUGH_TO_USE_TABLE_STATS:
         champ_calendar = styling_calendar(champ_calendar, 'table', table_stats)
     else:
         champ_calendar = champ_calendar.style
