@@ -213,4 +213,4 @@ H2H_LINKS = {'Россия': 'https://fantasy-h2h.ru/analytics/fantasy_players_s
              'Германия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/186',
              'Испания': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/182',
              'Англия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/183',
-             'Италия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/164'}
+             'Италия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/189'}

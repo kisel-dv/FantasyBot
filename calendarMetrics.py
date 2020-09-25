@@ -37,6 +37,9 @@ def getter_probs(data: Dict[Any, Any], k: Any, func: Callable) -> Any:
 
 # функция для вычисления сложности календаря на основе букмекерских котиовок на чемпиона
 def difficulty_probs(team1: str, team2: str, side: str, stats_data: Dict[str, float]) -> float:
+    # TODO: поднять проверку на уровень выше
+    if team2 in SPORTS_CLUB_MAP:
+        team2 = SPORTS_CLUB_MAP[team2]
     if side == '(г)':
         team1, team2 = team2, team1
     s1 = getter_probs(stats_data, team1, min)

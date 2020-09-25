@@ -26,8 +26,6 @@ MONTHS = {'дек': 12, 'янв': 1, 'фев': 2,
 
 # маппинг дня недели в сокращенное кириллическое представление
 WEEKDAY_CYRILLIC = {0: 'ПН', 1: 'ВТ', 2: 'СР', 3: 'ЧТ', 4: 'ПТ', 5: 'СБ', 6: 'ВС'}
-# TODO: внести в функцию обратно?
-REQUEST_HEADERS = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"}
 
 
 # функция для конвертации даты из кириллицы в date формат,
@@ -61,7 +59,10 @@ def get_champ_stats_caption(champ: str, deadline: str, deadline_date: date) -> s
 
 # функция для обработки каждой страницы, возвращает пару (текст страницы, soup объект)
 def request_text_soup(link: str, **kwargs) -> Tuple[str, BeautifulSoup]:
-    req = urllib.request.urlopen(urllib.request.Request(link, headers=REQUEST_HEADERS))
+    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" +
+                             " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+               }
+    req = urllib.request.urlopen(urllib.request.Request(link, headers=headers))
     if link != req.geturl():
         logging.error('При обработке ссылки произошла переадресация на другой адрес')
         text = ''
