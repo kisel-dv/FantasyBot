@@ -77,12 +77,14 @@ def request_text_soup(link: str, **kwargs) -> Tuple[str, BeautifulSoup]:
 def save_pic(s, directory: str, pic_name: str, flag: str) -> Union[str, None]:
     if s is None:
         return None
+    html = s.render()
     options = {'encoding': "UTF-8"}
     if flag == 'marathon':
         # дополнительные настройки для сохранения картинкой - размеры в пикселях
         options.update({'width': str(450 + int(s.ctx[(0, 3)][0][:-2].split()[-1])),
                         'height': str(24 * s.data.shape[0] + 36)})
-    html = s.render()
+    if flag == 'calendar':
+        options.update({'width': str(200 + s.data.shape[1] * int(s.ctx[(0, 0)][1][:-2].split()[-1]))})
     if not os.path.isdir(directory):
         os.makedirs(directory)
     path = directory + pic_name + ".png"

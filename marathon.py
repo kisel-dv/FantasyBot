@@ -54,7 +54,6 @@ def set_style(week_stats: Dict[str, list], color_scheme, team_order):
     s = s.set_properties(subset=['team'], **{'width': '210px', 'text-align': 'center', 'font-weight': 'bold'})
     s = s.set_properties(subset=['opponent'],
                          **{'width': str(max(s.data.opponent.apply(len)) * 9) + 'px', 'text-align': 'left'})
-    s.render()
     return s
 
 
