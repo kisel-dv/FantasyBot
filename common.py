@@ -84,7 +84,9 @@ def save_pic(s, directory: str, pic_name: str, flag: str) -> Union[str, None]:
         options.update({'width': str(450 + int(s.ctx[(0, 3)][0][:-2].split()[-1])),
                         'height': str(24 * s.data.shape[0] + 36)})
     if flag == 'calendar':
-        options.update({'width': str(200 + s.data.shape[1] * int(s.ctx[(0, 0)][1][:-2].split()[-1]))})
+        # проверка, если в стайл-объекте есть цвет - то применить
+        if s.ctx[(0, 0)]:
+            options.update({'width': str(200 + s.data.shape[1] * int(s.ctx[(0, 0)][1][:-2].split()[-1]))})
     if not os.path.isdir(directory):
         os.makedirs(directory)
     path = directory + pic_name + ".png"
@@ -95,6 +97,9 @@ def save_pic(s, directory: str, pic_name: str, flag: str) -> Union[str, None]:
 
 # функция для сохранения стилизированных данных в формате таблиц
 def save_stats_to_excel(writer: pd.ExcelWriter, champ: str, marathon, calendar) -> None:
+    if marathon is None and calendar is None:
+        logging.warning('Таблицы пустые')
+        return
     workbook = writer.book
     writer.sheets[champ] = workbook.create_sheet(champ)
     # настройка ширины столбцов (первых 6, потому что используются только они)

@@ -55,6 +55,9 @@ def safety_send_group(channel_id: str, media: List[InputMediaPhoto], proxy: bool
 def posting_to_channel(channel_id: str, caption: str, *files) -> None:
     with ExitStack() as stack:
         pics = [stack.enter_context(open(fp, 'rb')) for fp in files if fp is not None]
+        if not pics:
+            logging.warning('Нет картинок для публикации')
+            return
         media = []
         for i in range(len(pics)):
             media.append(InputMediaPhoto(pics[i], caption) if i == 0 else InputMediaPhoto(pics[i]))

@@ -26,7 +26,7 @@ def pull_champ_winner_probs(current_champ: str, matchweek: int, team_number: int
         return {}
     link = find_xbet_link(current_champ)
     if link is None:
-        logging.error('{}: ссылка на 1xbet данные не найдена'.format(current_champ))
+        logging.warning('{}: ссылка на 1xbet данные не найдена'.format(current_champ))
         return {}
     browser = webdriver.Chrome(executable_path=CHROME_DRIVER_PATH, options=CHROME_OPTIONS)
     browser.get(link)
