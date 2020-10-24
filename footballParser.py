@@ -79,11 +79,6 @@ def pull_champ_meta(current_champ: str) -> Union[list, None]:
     return [deadline_date, max_date, deadline_text, match_week, match_num]
 
 
-# функция для извлечения из словаря CHAMP_LINKS сразу нескольких ключей
-# def get_meta(current_champ, *args):
-#    return [CHAMP_LINKS[current_champ].get(x) for x in args]
-
-
 # 'prod' / 'test'
 def run_stats_update(mode: str = 'prod', champs: List[str] = None) -> None:
     # иницализация excelWriter, mode='w' для полной перезаписи файла

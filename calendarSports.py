@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 import logging
-from typing import Tuple, Dict, List, Callable
+from typing import Dict, List, Callable
 import datetime
 
 from common import request_text_soup
@@ -47,10 +47,6 @@ def table_processing(current_champ: str, champ_link: str) -> Dict[str, float]:
     return stats
 
 
-# a without class
-# a class player
-# a class score
-# a class player
 def match_proc(match):
     fields = list(map(lambda x: x.text.strip(), match.find_all('a')))
     # формально на первом месте может стоять либо дата с временем(тогда мы выцепляем дату),
@@ -171,7 +167,7 @@ def styling_calendar(calendar: pd.DataFrame, mode: str, stats_data: Dict[str, fl
 # основная функция обработки в этом модуле
 def calendar_processing(current_champ: str, current_champ_links: Dict[str, str], matchweek: int):
     if current_champ == 'Корея':
-        logging.error('{}: Да пофиксь ты уже Корею, заебал'.format(current_champ))
+        logging.error('{}: чемпионат не обрабатывается из-за дележки на две таблицы'.format(current_champ))
         return
     # логирование информации о времени обработки каждого чемпионата
     champ_start_time = time.time()
