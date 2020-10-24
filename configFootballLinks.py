@@ -59,11 +59,11 @@ CHAMP_LINKS = {
                'https://www.sports.ru/super-lig/',
                '🇹🇷'),
     'Лига Чемпионов': ('https://www.marathonbet.ru/su/popular/Football/Clubs.+International/UEFA+Champions+League+-+21255',
-                       'https://www.sports.ru/fantasy/football/team/points/2205029.html',
+                       'https://www.sports.ru/fantasy/football/team/points/2262175.html',
                        '',
                        '🇪🇺'),
     'Лига Европы': ('https://www.marathonbet.ru/su/popular/Football/Clubs.+International/UEFA+Europa+League+-+21366',
-                    'https://www.sports.ru/fantasy/football/team/points/2206981.html',
+                    'https://www.sports.ru/fantasy/football/team/points/2265078.html',
                     '',
                     '🇪🇺')
 }
@@ -203,9 +203,11 @@ for key in XBET_CHAMP_LINKS:
 
 # захардкоженные имена для нескольких клубов, для которых имена в разных местах на спортс.ру отличаются
 # (профиль->таблица)
-SPORTS_CLUB_MAP = {'Маритиму': 'Маритиму Мадейра',
-                   'Санта-Клара': 'Санта Клара',
-                   'Фаренсе': 'Спортинг Фаренсе'}
+SPORTS_CLUB_MAP = {
+                    #'Маритиму': 'Маритиму Мадейра',
+                    #'Санта-Клара': 'Санта Клара',
+                    #'Фаренсе': 'Спортинг Фаренсе'
+}
 
 # fantasy-h2h.ru
 H2H_LINKS = {'Россия': 'https://fantasy-h2h.ru/analytics/fantasy_players_statistics/179',
