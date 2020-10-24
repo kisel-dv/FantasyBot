@@ -96,7 +96,8 @@ def marathon_processing(current_champ: str, current_champ_links: Tuple[str],
     # фиксирование времени по каждому чемпионату, логирование обработки каждого чемпионата
     champ_start_time = time.time()
     # запрос страницы с матчами по текущему чемпионату
-    link = current_champ_links['marathon']
+    # марафон начал публиковать за 24 по дефолту, указываем параметр - за все время
+    link = current_champ_links['marathon'] + '?interval=ALL_TIME'
     if not link:
         logging.error('Пустая ссылка на марафон, несмотря на то, что дедлайн близко')
         return
