@@ -179,7 +179,9 @@ def calendar_processing(current_champ: str, current_champ_links: Dict[str, str],
     table_stats = table_processing(current_champ, current_champ_link)
     # обработка букмекерской линии на победителя чемпионата: champion_probs - dict anyway
     team_number = len(table_stats)
-    champion_probs = pull_champ_winner_probs(current_champ, matchweek, team_number)
+    # TODO:xbet fix
+    champion_probs = {}
+    #champion_probs = pull_champ_winner_probs(current_champ, matchweek, team_number)
     # обработка календаря
     champ_calendar = get_champ_calendar(current_champ_link, matchweek, list(table_stats.keys()))
 

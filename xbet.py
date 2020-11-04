@@ -1,3 +1,5 @@
+# TODO: временно отключено, надо переписывать, на сайте переделана структура json
+
 import time
 import re
 import logging
@@ -86,3 +88,6 @@ def find_xbet_link(current_champ: str) -> Union[str, None]:
         return target_link
     logging.warning('{}: нет подходящего события'.format(current_champ))
     return
+
+if __name__ == '__main__':
+    print(find_xbet_link('Германия'))
