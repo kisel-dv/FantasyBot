@@ -9,14 +9,14 @@ from typing import List, Union
 
 import calendarSports
 import common
-import fantasyBot
+import tgbot
 import marathon
 from configFootballLinks import CHAMP_LINKS
 from config import MARATHON_DIR, CALENDAR_DIR, TG_CHANNELS, EXCEL_PATHS
 
 
 # на сколько дней нужно смотреть вперед в поиске дедлайнов
-DAYS_BEFORE_DEADLINE = 3
+DAYS_BEFORE_DEADLINE = 1
 
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
@@ -110,7 +110,7 @@ def run_stats_update(mode: str = 'prod', champs: List[str] = None) -> None:
         path_calendar = common.save_pic(styled_calendar, CALENDAR_DIR, current_champ, 'calendar')
         # добавление подписи и выгрузка в телеграм-канал
         post_caption = common.get_champ_stats_caption(current_champ, deadline_text, deadline_date)
-        fantasyBot.posting_to_channel(channel_id, post_caption, path_marathon, path_calendar)
+        tgbot.posting_to_channel(channel_id, post_caption, path_marathon, path_calendar)
         # апдейт страницы в таблице
         common.save_stats_to_excel(writer, current_champ, styled_marathon, styled_calendar)
 
@@ -130,5 +130,5 @@ if __name__ == '__main__':
     logging.basicConfig(filename='log/{}.log'.format(date.today()),
                         level=logging.INFO,
                         format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
-    #run_stats_update('test')
-    run_stats_update('prod')
+    run_stats_update('test', champs=['Италия'])
+    #run_stats_update('prod')
