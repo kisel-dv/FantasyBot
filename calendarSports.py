@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 import logging
-from typing import Dict, List, Callable
+from typing import Dict, List, Callable, Tuple
 import datetime
 
 from common import request_text_soup
@@ -54,13 +54,6 @@ def match_proc(match):
     fields[0] = fields[0].split('|')[0]
     return fields
 
-
-def week_proc(week, week_number):
-    ms = list(map(lambda x: match_proc(x) + [week_number], week))
-    # фильтрация перенесенных игр - если вместо даты/времени указано "перенесен", там не будет a элемента, будет span
-    return list(filter(lambda x: len(x) == 5, ms))
-
-
 # учитывает ситуации, когда матч перенесен вперед, т.е. туры матчей: 1-1-2-2-2-1
 # возможные ситуации, которые не учтены:
 # 1) матч перенесен назад: 2-1-1-1-2-2: БОЛЕЕ ТОГО, ЭТО ЛОМАЕТ АЛГОРИТМ
@@ -69,14 +62,14 @@ def week_proc(week, week_number):
 def proc_matchweek(arr):
     max_week = 0
     for i, elem in enumerate(arr):
-        if elem[-1] > max_week:
+        if elem[-1] == max_week + 1:
             max_week = elem[-1]
-        if elem[-1] < max_week:
+        if (elem[-1] < max_week) or (elem[-1] > max_week + 1):
             arr[i][-1] = max_week
     return arr
 
 
-def get_champ_calendar(current_champ_link: str, matchweek: int, teams: List[str]) -> pd.DataFrame:
+def get_champ_calendar(current_champ_link: str, matchweek: int, teams: List[str]) -> Tuple[pd.DataFrame, int, List[str]]:
     calendar_link = current_champ_link + 'calendar/'
     text, soup = request_text_soup(calendar_link)
 
@@ -84,6 +77,7 @@ def get_champ_calendar(current_champ_link: str, matchweek: int, teams: List[str]
     links = dict(map(lambda x: (x.text, x['href']), months.find_all('a')))
 
     full_matches = []
+    postponed_matches = []
     # TODO:можно оптимизировать - обрабатывать, начиная с текущего месяца, иначе пропускать
     # обрабатывать условные 3 месяца, не больше
     for month, link in links.items():
@@ -94,17 +88,22 @@ def get_champ_calendar(current_champ_link: str, matchweek: int, teams: List[str]
         weeks_with_matches = soup.find_all('table', class_="stat-table")
         matches = list(map(lambda x: x.find_all('tr')[1:], weeks_with_matches))
         # обработка каждого матча + последним элементом крепим номер тура
-        matches_by_week = map(week_proc, matches, week_numbers)
-        # избавление от вложенности
-        full_matches.extend([m for w in matches_by_week for m in w])
+        for i, week in enumerate(matches):
+            ms = list(map(lambda x: match_proc(x) + [week_numbers[i]], week))
+            full_matches.extend([x for x in ms if len(x) == 5])
+            postponed_matches.extend(['{} - {}, {}тур'.format(x[0], x[2], x[3]) for x in ms if len(x) != 5])
 
     sorted_matches = sorted(full_matches, key=lambda x: datetime.datetime.strptime(x[0], '%d.%m.%Y'))
     # получение номера фентези-тура из номера тура (рассматриваем и учитываем спарки)
     true_matches = proc_matchweek(sorted_matches)
     d = {}
+    current_match_num = 0
     for current_week in range(matchweek, matchweek + 5):
+        if current_week == matchweek:
+            current_match_num = len([x for x in true_matches if x[-1] == current_week])
         d[current_week] = {key: '' for key in teams}
         current_week_matches = filter(lambda x: x[-1] == current_week, true_matches)
+        # выгрузка количества матчей в ближайшем туре
         for match in current_week_matches:
             home_team = match[1]
             away_team = match[3]
@@ -113,7 +112,7 @@ def get_champ_calendar(current_champ_link: str, matchweek: int, teams: List[str]
                     d[current_week][team] += ' + '
             d[current_week][home_team] += away_team + '(д)'
             d[current_week][away_team] += home_team + '(г)'
-    return pd.DataFrame(d)
+    return pd.DataFrame(d), current_match_num, postponed_matches
 
 
 # цвет в зависимости от пороговых значений сложности
@@ -178,12 +177,13 @@ def calendar_processing(current_champ: str, current_champ_links: Dict[str, str],
     # обработка таблицы: table stats - dict anyway
     table_stats = table_processing(current_champ, current_champ_link)
     # обработка букмекерской линии на победителя чемпионата: champion_probs - dict anyway
-    team_number = len(table_stats)
     # TODO:xbet fix
     champion_probs = {}
-    #champion_probs = pull_champ_winner_probs(current_champ, matchweek, team_number)
+    # team_number = len(table_stats)
+    # champion_probs = pull_champ_winner_probs(current_champ, matchweek, team_number)
     # обработка календаря
-    champ_calendar = get_champ_calendar(current_champ_link, matchweek, list(table_stats.keys()))
+    champ_calendar, current_match_num, postponed_matches = get_champ_calendar(current_champ_link,
+                                                                              matchweek, list(table_stats.keys()))
 
     # оформление и сохранение (если tableStats и championProbs пустые, то без оформления)
     if champion_probs:
@@ -196,4 +196,4 @@ def calendar_processing(current_champ: str, current_champ_links: Dict[str, str],
     # логирование времени обработки каждого чемпионата
     logging.info('{}: календарь чемпионата обработан за время: {}s'.format(current_champ,
                                                                            round(time.time() - champ_start_time, 3)))
-    return champ_calendar
+    return champ_calendar, current_match_num, postponed_matches

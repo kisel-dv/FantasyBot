@@ -9,7 +9,7 @@ import json
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import date
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, List
 
 from configFootballLinks import CHAMP_LINKS
 from config import WKHTMLTOIMAGE_PATH
@@ -50,15 +50,18 @@ def rus_date_convert(d: str) -> date:
 
 
 # генерирует надпись для первой картинки из выкладываемых для каждого чемпионата
-def get_champ_stats_caption(champ: str, deadline: str, deadline_date: date) -> str:
+def get_champ_stats_caption(champ: str, deadline: str, deadline_date: date, pp_matches: List[str]) -> str:
     weekday = WEEKDAY_CYRILLIC[deadline_date.weekday()]
     emoji = CHAMP_LINKS[champ]['emoji']
     caption = '{}{}\nДедлайн: {} ({})'.format(emoji, champ, deadline, weekday)
+    postponed_matches = '\n'.join(pp_matches)
+    if postponed_matches:
+        caption += '\n\nСписок перенесенных неназначенных игр:\n{}'.format(postponed_matches)
     return caption
 
 
 # функция для обработки каждой страницы, возвращает пару (текст страницы, soup объект)
-def request_text_soup(link: str, **kwargs) -> Tuple[str, BeautifulSoup]:
+def request_text_soup(link: str, num=1, **kwargs) -> Tuple[str, BeautifulSoup]:
     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" +
                              " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
                }
@@ -67,9 +70,16 @@ def request_text_soup(link: str, **kwargs) -> Tuple[str, BeautifulSoup]:
         logging.error('При обработке ссылки произошла переадресация на другой адрес')
         text = ''
     else:
-        text = req.read().decode('utf-8')
-        if 'func' in kwargs:
-            text = kwargs['func'](text)
+        # не нравится, надо бы переделать потом
+        try:
+            text = req.read().decode('utf-8')
+            if 'func' in kwargs:
+                text = kwargs['func'](text)
+            num = 5
+        except:
+            logging.error('Не удается получить страницу: {}')
+        if num < 5:
+            return request_text_soup(link, num + 1, **kwargs)
     return text, BeautifulSoup(text, 'html.parser')
 
 

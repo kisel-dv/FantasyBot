@@ -16,7 +16,7 @@ from config import MARATHON_DIR, CALENDAR_DIR, TG_CHANNELS, EXCEL_PATHS
 
 
 # на сколько дней нужно смотреть вперед в поиске дедлайнов
-DAYS_BEFORE_DEADLINE = 1
+DAYS_BEFORE_DEADLINE = 3
 
 
 # функция для обработки страницы чьей-либо фентези команды на спортс.ру - на вход подается ссылка на команду
@@ -100,16 +100,15 @@ def run_stats_update(mode: str = 'prod', champs: List[str] = None) -> None:
         meta = pull_champ_meta(current_champ)
         if meta is None:
             continue
-        deadline_date, max_date, deadline_text, matchweek, match_num = meta
-        # обработка и сохранение картинкой информации с Марафона
-        styled_marathon = marathon.marathon_processing(current_champ, current_champ_links,
-                                                       deadline_date, max_date, match_num)
-        path_marathon = common.save_pic(styled_marathon, MARATHON_DIR, current_champ, 'marathon')
-        # обработка и сохранение картинкой календаря со спортс.ру
-        styled_calendar = calendarSports.calendar_processing(current_champ, current_champ_links, matchweek)
+        deadline_date, max_date, deadline_text, matchweek, match_num_meta = meta
+        # обработка и сохранение картинкой календаря со спортс.ру, определение количества матчей в ближайшем туре
+        styled_calendar, match_num, postponed_matches = calendarSports.calendar_processing(current_champ, current_champ_links, matchweek) or (None, match_num_meta, None)
         path_calendar = common.save_pic(styled_calendar, CALENDAR_DIR, current_champ, 'calendar')
+        # обработка и сохранение картинкой информации с Марафона
+        styled_marathon = marathon.marathon_processing(current_champ, current_champ_links, deadline_date, max_date, match_num)
+        path_marathon = common.save_pic(styled_marathon, MARATHON_DIR, current_champ, 'marathon')
         # добавление подписи и выгрузка в телеграм-канал
-        post_caption = common.get_champ_stats_caption(current_champ, deadline_text, deadline_date)
+        post_caption = common.get_champ_stats_caption(current_champ, deadline_text, deadline_date, postponed_matches)
         tgbot.posting_to_channel(channel_id, post_caption, path_marathon, path_calendar)
         # апдейт страницы в таблице
         common.save_stats_to_excel(writer, current_champ, styled_marathon, styled_calendar)
@@ -130,5 +129,5 @@ if __name__ == '__main__':
     logging.basicConfig(filename='log/{}.log'.format(date.today()),
                         level=logging.INFO,
                         format=u'[%(asctime)s]  %(filename)-20s[LINE:%(lineno)d] #%(levelname)-8s  %(message)s')
-    run_stats_update('test', champs=['Италия'])
-    #run_stats_update('prod')
+    #run_stats_update('test', champs=['Испания'])
+    run_stats_update('prod')
